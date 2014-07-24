@@ -8,6 +8,7 @@ annotations and term definitions
 from struct import pack, unpack, calcsize, error
 import operator
 import time
+import os
 import stats
 
 # Character codes used by binary format to identify ontology 
@@ -676,7 +677,7 @@ def writeBitFile(annotFile, obofile, destFile, taxas = None):
     dst.close()
     print "Completed at", time.asctime()
 
-if __name__ == '__main__':
+if __name__ == '__main__0':
     writeBitFile('/Users/mikael/simhome/TNR/GO/gene_association.tair', 
                  '/Users/mikael/simhome/TNR/GO/gene_ontology_ext.obo',
                  '/Users/mikael/simhome/TNR/GO/tair.bit')
@@ -693,7 +694,8 @@ if __name__ == '__main__':
     #bgo = BinGO('/Users/mikael/simhome/gene_association.bit', taxa = 39947)
     print "Done loading index with %d genes annotated" % len(bgo.annot_index)
 
-if __name__ == '__main__0':
+if __name__ == '__main__':
+    print os.getcwd()
     #writeBitFile('/Users/mikael/simhome/gene_association.goa_uniprot', 
     #             '/Users/mikael/simhome/gene_ontology_ext.obo',
     #             '/Users/mikael/simhome/gene_association_mammal.bit',
@@ -729,7 +731,7 @@ if __name__ == '__main__0':
     f_bg.close()
     f_fg.close()
     rows = bgo.getGOReport(fg, bg, include_more_general = True)
-    for row in rows:
+    for row in rows[0:100]:
         if len(row) > 4:
             print "%s\t%4.2E\t%3d\t%6d\t%s (%s)" % (row[0], row[1], row[2], row[3], row[4].strip(), row[5])
         else:
