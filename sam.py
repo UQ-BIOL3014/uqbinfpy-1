@@ -4,9 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 import operator
+import math
+import re
 """This python module reads in sam files from RNA-seq experiment and processes them and RNA-seq data"""
 
-
+    
 def sam_reader(filename):
     """Mandatory fields are QNAME,FLAG,RNAME,POS,MAPQ,CIGAR,RNEXT,PNEXT,TLEN,SEQ,QUAL
 for more info http://samtools.github.io/hts-specs/SAMv1.pdf """ 
@@ -95,9 +97,9 @@ def subgroups(mapped_reads):
     for read in mapped_reads:
         if int(read[4])>29:
             group1.append(read)
-        elif int(read[4])<=29 and int(read[4])>12:
+        elif int(read[4])<=29 and int(read[4])>17:
             group2.append(read)
-        elif int(read[4])<=12:
+        elif int(read[4])<=17:
             group3.append(read)
         else:
             pass
@@ -235,76 +237,247 @@ def plot_base_composition(reads,sym):
 #####################################################
 #Transcript reader
 
-def transcript_reader(filename):
+def raw_count_reader(filename):
     data={}
     f= open(filename,'r')
     for row in f:
-        if row.startswith('Transcription'): # skip the header
+        if row.startswith('t1'): # skip the header
             pass
         else:
             info=row.strip().split('\t')
-            if len(info)>17:
-                data[info[7]]=[float(info[8]),float(info[9]),float(info[10]),float(info[11]),float(info[12]),float(info[13]),float(info[14]),float(info[15]),float(info[16]),float(info[17])]
-            else:
-                data[info[6]]=[float(info[7]),float(info[8]),float(info[9]),float(info[10]),float(info[11]),float(info[12]),float(info[13]),float(info[14]),float(info[15]),float(info[16])]
+            data[info[0]]=[int(info[1]),int(info[2]),int(info[3]),int(info[4]),float(info[5])] #t1,rept1,t10,rept10,len 
     return data 
-            
-###############################
-#read edgeR results diff express
 
-def Diff_reader_FDR(filename):
-    data={}
-    f= open(filename,'r')
-    for row in f:
-        if row.startswith('logFC'): # skip the header
-            pass
+
+#####Normalisation methods 
+
+
+def get_RPKM(data,num_map1,num_map2,num_map3,num_map4):
+    """provide number of mapped reads for the two groups of interest and raw count data .This method provides length normalisation to prevent length and total count bias"""
+    counts1=[];counts2=[];counts3=[];counts4=[];lengths=[]
+    for i,s,ii,ss,v in data.values():
+        counts1.append(i)
+        counts2.append(s)
+        counts3.append(ii)
+        counts4.append(ss)
+        lengths.append(v)
+    rpkms=[];rpkms2=[];rpkms3=[];rpkms4=[];final={}
+    #perform RPKM calc
+    for i in range(0,len(counts1)):
+        if counts1[i]==0:
+            rpkm=0
+            rpkms.append(rpkm)
         else:
-            info=row.strip().split('\t')
-            if len(info)>17:
-                data[info[0]]=(float(info[1]),float(info[2]),float(info[3])) #keep FDR adjusted-pvalues and LOGFC
-            else:
-                data[info[0]]=(float(info[1]),float(info[2]),float(info[3]))
-    return data 
-     
-    
-###########visualise the adjusted p-values
-def plot_FDRpval(data):
-    """plot distribution of FDR adjusted p-values"""
-    vals=[]
-    for i,s,v in data.values():
-        vals.append(v)
+            rpkm=float(counts1[i])/(lengths[i]*(float(num_map1)/10**6))
+            rpkms.append(rpkm)
+    for i in range(0,len(counts2)):
+        if counts2[i]==0:
+            rpkm=0
+            rpkms2.append(rpkm)
+        else:
+            rpkm=float(counts2[i])/(lengths[i]*(float(num_map2)/10**6))
+            rpkms2.append(rpkm)
+    for i in range(0,len(counts3)):
+        if counts3[i]==0:
+            rpkm=0
+            rpkms3.append(rpkm)
+        else:
+            rpkm=float(counts3[i])/(lengths[i]*(float(num_map3)/10**6))
+            rpkms3.append(rpkm)
+    for i in range(0,len(counts4)):
+        if counts4[i]==0:
+            rpkm=0
+            rpkms4.append(rpkm)
+        else:
+            rpkm=float(counts4[i])/(lengths[i]*(float(num_map4)/10**6))
+            rpkms4.append(rpkm)
+    #return gene names and rpkms 
+    for i in range(0,len(data.keys())):
+        final[data.keys()[i]]=[float(rpkms[i]),float(rpkms2[i]),float(rpkms3[i]),float(rpkms4[i])]
+    return final 
+
+def write_RPKM_data(RPKM_data,filename):
+    f=open(filename,'w')
+    for i in range(0,len(RPKM_data)):
+        f.write("%s\t%d\t%d\t%d\t%d\n"%(RPKM_data.keys()[i],int(RPKM_data.values()[i][0]),int(RPKM_data.values()[i][1]),int(RPKM_data.values()[i][2]),int(RPKM_data.values()[i][3])))
+    f.close() 
+        
+
+
+
+###############Visualize replicates to determine degree of biological variation
+
+def pearson_def(x, y):
+    assert len(x) == len(y)
+    n = len(x)
+    assert n > 0
+    avg_x = np.mean(x)
+    avg_y = np.mean(y)
+    diffprod = 0
+    xdiff2 = 0
+    ydiff2 = 0
+    for idx in range(n):
+        xdiff = x[idx] - avg_x
+        ydiff = y[idx] - avg_y
+        diffprod += xdiff * ydiff
+        xdiff2 += xdiff * xdiff
+        ydiff2 += ydiff * ydiff
+    return diffprod / math.sqrt(xdiff2 * ydiff2)
+
+
+def plotreprpkm(rpkm_data,timepoint):
+    """plot showing level of agreement between technical replicates for RPKM between replicates and plots coefficient of determination"""
+    one=[]
+    two=[]
+    if timepoint=="t1":
+        for i in range(0,len(rpkm_data.values())):
+            one.append(int(rpkm_data.values()[i][0]))
+            two.append(int(rpkm_data.values()[i][1]))
+    else:
+        for i in range(0,len(rpkm_data.values())):
+            one.append(int(rpkm_data.values()[i][2]))
+            two.append(int(rpkm_data.values()[i][3]))
+    plt.plot(one,two,'o')
+    pcc=pearson_def(one,two)
+    R2=pcc**2
+    name="""Technical Replicates
+R2="""+str(R2)
+    m,b= np.polyfit(one,two,1)
+    plt.figure(1, figsize=(8,8))
+    plt.plot(one, np.array(one)*m +b,'r-') 
+    plt.text(3000, max(two)-1000,name , fontsize=12)
+    plt.xlabel("RPKM replicate 1")
+    plt.ylabel("RPKM replicate 2")
+    plt.title(timepoint)
+    plt.show()
+
+
+def plotMAreprpkm(rpkm_data,timepoint):
+    """MA Plot of log(RPKM) vs Average log(RPKM) of replicates"""
+    m=[]
+    a=[]
+    if timepoint=="t1":
+        for i in range(0,len(rpkm_data.values())):
+            y=np.log2(rpkm_data.values()[i][0]+1)-np.log2(rpkm_data.values()[i][1]+1)
+            x=(np.log2(rpkm_data.values()[i][0]+1)+np.log2(rpkm_data.values()[i][1]+1))/2
+            m.append(y)
+            a.append(x)
+    else:
+        for i in range(0,len(rpkm_data.values())):
+            y=np.log2(rpkm_data.values()[i][2]+1)-np.log2(rpkm_data.values()[i][3]+1)
+            x=(np.log2(rpkm_data.values()[i][2]+1)+np.log2(rpkm_data.values()[i][3]+1))/2
+            m.append(y)
+            a.append(x)    
     plt.figure(1, figsize=(8,8))
     ax = plt.axes([0.1, 0.1, 0.8, 0.8])
-    n, bins, patches = plt.hist(vals,50, normed=0, facecolor='g')
-    plt.xlabel("Adjusted P-values")
-    plt.ylabel("number of genes")
-    plt.title("FDR adjust.pval plot")
-    plt.show()   
-
-def plotMA(data,cutoff=0):
-    """MA Plot of logfold change vs logpcm"""
-    logfc=[]
-    logpcm=[]
-    sig_logfc=[]
-    sig_logpcm=[]
-    for i,s,v in data.values():
-        if v>cutoff:
-            logfc.append(i)
-            logpcm.append(s)
-        else:
-            sig_logfc.append(i)
-            sig_logpcm.append(s)
-    plt.plot(logpcm,logfc,'o')
-    plt.plot(sig_logpcm,sig_logfc,'ro')
-    plt.xlabel("logpcm")
-    plt.ylabel("logfc")
-    plt.title("Fold change vs abundance")
+    plt.plot(a,m,'o')
+    plt.axhline(np.mean(m)+1.96*np.std(m),color="green",label="avg diff +1.96(std diff)")
+    plt.axhline(np.mean(m)-1.96*np.std(m),color="green",label="avg diff -1.96(std diff)")
+    plt.xlabel("Average log(RPKM) of replicates")
+    plt.ylabel("Difference in log(RPKM) of replicates")
+    plt.legend(loc="lower right")
+    plt.title(timepoint)
     plt.show()
-    
+
+
+
+def get_cv(data1,condition):
+    cvs=[]
+    if condition=="t1":
+        for i in range(0,len(data1.values())):
+            mean = np.mean([data1.values()[i][0],data1.values()[i][1]])
+            std=np.std([data1.values()[i][0],data1.values()[i][1]])
+            if mean==0.0 and std==0.0:
+                pass
+            else:
+                cv=float(mean+1)/(std+1)
+                cvs.append(cv) 
+    else:
+        for i in range(0,len(data1.values())):
+            mean = np.mean([data1.values()[i][3],data1.values()[i][4]])
+            std=np.std([data1.values()[i][3],data1.values()[i][4]])
+            if mean==0.0 and std==0.0:
+                pass
+            else:
+                cv=mean+1/std+1
+                cvs.append(cv)          
+    return cvs 
+        
+        
+def get_boxplots(norm,original):
+    """distribution of the coeficient of variation across samples (replicates) normalised using the methods provided"""
+    bp=plt.boxplot([norm,original],notch=False, patch_artist=True)
+    for box in bp['boxes']:
+        box.set(color="red")
+        box.set(color="blue")
+    plt.ylabel("coefficient of variation")
+    plt.xlabel("Methods")
+    my_xticks = ['RPKM','raw counts']
+    x=[1,2]
+    plt.xticks(x,my_xticks)
+    plt.ylim(0,400)
+    plt.show()       
+                   
+               
+def plotavg_cv(norm,original):
+    """distribution of the coeficient of variation across samples (replicates) normalised using the methods provided"""
+    x=[1,2]
+    y=[np.mean(norm),np.mean(original)]
+    plt.figure(1, figsize=(8,8))
+    ax = plt.axes([0.1, 0.1, 0.8, 0.8])
+    plt.bar(x[0],y[0],color="red",label="RPKM")
+    plt.bar(x[1],y[1],color="blue",label="Raw counts")
+    plt.ylabel("Average coefficient of variation")
+    plt.xlabel("Methods")
+    ax.xaxis.set_ticklabels([])
+    plt.legend(loc="upper right")
+    plt.show()
+
+
+def plotMA(rpkm_data,cutoff=[-1.5,1.5]):
+    logfc=[]
+    avg_rpkm=[]
+    sig_logfc=[]
+    sig_avg_rpkm=[]
+    logfc2=[]
+    avg_rpkm2=[]
+    sig_logfc2=[]
+    sig_avg_rpkm2=[]
+    for i,ii,s,ss in rpkm_data.values():
+        fc=np.log2(float(s+1)/(i+1))
+        if fc<cutoff[0] or fc>cutoff[1]:
+            sig_logfc.append(fc)
+            sig_avg_rpkm.append(np.log2(s+1)+np.log2(i+1)/2)
+        else:
+            logfc.append(fc)
+            avg_rpkm.append(np.log2(s+1)+np.log2(i+1)/2)
+    for i,ii,s,ss in rpkm_data.values():
+        fc2=np.log2(float(ss+1)/(ii+1))
+        if fc2<cutoff[0] or fc2>cutoff[1]:
+            sig_logfc2.append(fc2)
+            sig_avg_rpkm2.append(np.log2(ss+1)+np.log2(ii+1)/2)
+        else:
+            logfc2.append(fc2)
+            avg_rpkm2.append(np.log2(ss+1)+np.log2(ii+1)/2)
+    plt.figure(1, figsize=(8,8))
+    ax = plt.axes([0.1, 0.1, 0.8, 0.8])
+    plt.plot(avg_rpkm,logfc,'o',color="blue",label="rep1")
+    plt.plot(avg_rpkm2,logfc2,'x',color="blue",label="rep2")
+    plt.plot(sig_avg_rpkm,sig_logfc,'o',color="red",label="sig rep1")
+    plt.plot(sig_avg_rpkm2,sig_logfc2,'x',color="red",label="sig rep2")
+    plt.axhline(cutoff[0],color="orange")
+    plt.axhline(cutoff[1],color="orange")
+    plt.ylabel("Fold Change (log2)")
+    plt.xlabel("Average RPKM (log2)")
+    plt.title("MA plot")
+    plt.legend(loc="upper left")
+    plt.show()
+        
+   
 #######Test Methods
 
         
-t1=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1.sam")
+t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
 
 # determine the number of reads 
 reads=numberofreads(t1)
@@ -315,11 +488,11 @@ base=base_percentages(t1)
 print base
 
 #obtain the mapped reads 
-mapped_reads=mapped_reads(t1,True)
-print mapped_reads[0:5] 
+mapped_read=mapped_reads(t1,True)
+print mapped_read[0:5] 
 
 #number of mapped bases
-num_bases=mappedBases(mapped_reads)
+num_bases=mappedBases(mapped_read)
 print "number of mapped bases",num_bases
 
 
@@ -329,7 +502,7 @@ print "number of mapped bases",num_bases
 ############################################
 ###get the range of numbers that comprimise the mapping quality 
 nums=[]
-for read in mapped_reads:
+for read in mapped_read:
     nums.append(read[4])
 nums=set(nums)
 print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
@@ -339,7 +512,7 @@ for num in nums:
     print "MAPQ and probability"
     print num,score
     
-group1,group2,group3=subgroups(mapped_reads)
+group1,group2,group3=subgroups(mapped_read)
 
 #dinuc frequency of the mapped reads
 
@@ -347,7 +520,7 @@ nuc=dinuc_freq(group1)
 print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
 
 #get the percentage of reads aligned need to know number of entries in fastq file 
-percent=PercentReadsAligned(group1,group2,group3,144126)
+percent=PercentReadsAligned(group1,group2,group3,reads)
 print percent
 
 
@@ -365,21 +538,54 @@ data=plot_base_composition(group1,'T')
 data=plot_base_composition(group1,'C')
 data=plot_base_composition(group1,'G')
 
-##read transcripts processed
+######read transcripts processed
 
-diff=Diff_reader_FDR("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/Diff_t10.txt")
 
-#plot adjusted p-value by FDR
-plot_FDRpval(diff)
-#plot MA of diff expression data showing significant points
-plotMA(diff,0.005)
 
-print "**************significant gene products at FDR adjust.pval<0.005*********************" 
-for k,v in diff.iteritems():
-    if v[2]<0.005:
-        print k
+t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
+t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
+t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
 
-        
+##get number of mapped reads printed to screen 
+mapped_read=mapped_reads(t1,True)
+mapped_read=mapped_reads(t10,True)
+mapped_read=mapped_reads(t1_2,True)
+mapped_read=mapped_reads(t10_2,True)
+
+raw_data=raw_count_reader("/Users/samirlal/Desktop/sam/raw_counts.txt")
+
+### Perform the normalisation methods 
+
+rpkm1=get_RPKM(raw_data,118898,121634,136286,135102)
+
+# write RPKM to output 
+write_RPKM_data(rpkm1,"RPKM_counts.txt")
+
+#Visualize variability among replicates using RPKM
+plotreprpkm(rpkm1,"t1")
+plotreprpkm(rpkm1,"t10")
+plotMAreprpkm(rpkm1,"t1")
+plotMAreprpkm(rpkm1,"t10")
+#######################################
+
+####Get CV 
+meth1= get_cv(rpkm1,"t1")
+orig=get_cv(raw_data,"t1")
+
+
+####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases) 
+
+get_boxplots(meth1,orig)
+plotavg_cv(meth1,orig)
+
+
+#####DEexpression statistical test
+plotMA(rpkm1)#Visualise MA plot
+
+"Provide the raw count file for DE" 
+"http://www.ijbcb.org/DEB/php/onlinetool.php"
+      
 
 
 
