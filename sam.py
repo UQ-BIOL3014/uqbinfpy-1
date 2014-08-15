@@ -472,86 +472,87 @@ def plotMA(rpkm_data,cutoff=[-1.5,1.5]):
     plt.title("MA plot")
     plt.legend(loc="upper left")
     plt.show()
+
         
    
-#######Test Methods
-
-        
-t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
-
-# determine the number of reads 
-reads=numberofreads(t1)
-print "number of reads",reads
-
-#base composition
-base=base_percentages(t1)
-print base
-
-#obtain the mapped reads 
-mapped_read=mapped_reads(t1,True)
-print mapped_read[0:5] 
-
-#number of mapped bases
-num_bases=mappedBases(mapped_read)
-print "number of mapped bases",num_bases
-
-
-
-############################################
-#Group the mapped_reads                    #
-############################################
-###get the range of numbers that comprimise the mapping quality 
-nums=[]
-for read in mapped_read:
-    nums.append(read[4])
-nums=set(nums)
-print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
-###Get the probability MAPQ=-10*log10*Pr{mapping position is wrong} 
-for num in nums:
-    score=inv_logit(int(num))
-    print "MAPQ and probability"
-    print num,score
-    
-group1,group2,group3=subgroups(mapped_read)
-
-#dinuc frequency of the mapped reads
-
-nuc=dinuc_freq(group1)
-print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
-
-#get the percentage of reads aligned need to know number of entries in fastq file 
-percent=PercentReadsAligned(group1,group2,group3,reads)
-print percent
-
-
-stats=length_stats(group1,group2,group3)
-print stats 
-
-#plot the length of all three subgroups
-plot_length_distrib(group1,"p<1e-3")
-plot_length_distrib(group2,"1e-3<=p<1e-2")
-plot_length_distrib(group3,"1e-2<=p<1")
-
-#plot nucleotide composition along the mapped read
-data=plot_base_composition(group1,'A')
-data=plot_base_composition(group1,'T')
-data=plot_base_composition(group1,'C')
-data=plot_base_composition(group1,'G')
-
-######read transcripts processed
-
-
-
-t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
-t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
-t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
-t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
-
-##get number of mapped reads printed to screen 
-mapped_read=mapped_reads(t1,True)
-mapped_read=mapped_reads(t10,True)
-mapped_read=mapped_reads(t1_2,True)
-mapped_read=mapped_reads(t10_2,True)
+#########Test Methods
+##
+##        
+##t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+##
+### determine the number of reads 
+##reads=numberofreads(t1)
+##print "number of reads",reads
+##
+###base composition
+##base=base_percentages(t1)
+##print base
+##
+###obtain the mapped reads 
+##mapped_read=mapped_reads(t1,True)
+##print mapped_read[0:5] 
+##
+###number of mapped bases
+##num_bases=mappedBases(mapped_read)
+##print "number of mapped bases",num_bases
+##
+##
+##
+##############################################
+###Group the mapped_reads                    #
+##############################################
+#####get the range of numbers that comprimise the mapping quality 
+##nums=[]
+##for read in mapped_read:
+##    nums.append(read[4])
+##nums=set(nums)
+##print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
+#####Get the probability MAPQ=-10*log10*Pr{mapping position is wrong} 
+##for num in nums:
+##    score=inv_logit(int(num))
+##    print "MAPQ and probability"
+##    print num,score
+##    
+##group1,group2,group3=subgroups(mapped_read)
+##
+###dinuc frequency of the mapped reads
+##
+##nuc=dinuc_freq(group1)
+##print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
+##
+###get the percentage of reads aligned need to know number of entries in fastq file 
+##percent=PercentReadsAligned(group1,group2,group3,reads)
+##print percent
+##
+##
+##stats=length_stats(group1,group2,group3)
+##print stats 
+##
+###plot the length of all three subgroups
+##plot_length_distrib(group1,"p<1e-3")
+##plot_length_distrib(group2,"1e-3<=p<1e-2")
+##plot_length_distrib(group3,"1e-2<=p<1")
+##
+###plot nucleotide composition along the mapped read
+##data=plot_base_composition(group1,'A')
+##data=plot_base_composition(group1,'T')
+##data=plot_base_composition(group1,'C')
+##data=plot_base_composition(group1,'G')
+##
+########read transcripts processed
+##
+##
+##
+##t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+##t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
+##t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
+##t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
+##
+####get number of mapped reads printed to screen 
+##mapped_read=mapped_reads(t1,True)
+##mapped_read=mapped_reads(t10,True)
+##mapped_read=mapped_reads(t1_2,True)
+##mapped_read=mapped_reads(t10_2,True)
 
 raw_data=raw_count_reader("/Users/samirlal/Desktop/sam/raw_counts.txt")
 
@@ -580,12 +581,85 @@ get_boxplots(meth1,orig)
 plotavg_cv(meth1,orig)
 
 
-#####DEexpression statistical test
+#####DE expression statistical test
 plotMA(rpkm1)#Visualise MA plot
+
+
+def mle(rpkm):
+    """maximum likelihood estimation according to poisson distribution for the number of changes per transcript across replicates"""
+    lane1=[]
+    lane2=[]
+    lane3=[]
+    lane4=[]
+    mles1=[]
+    mles2=[]
+    mles3=[]
+    mles4=[]
+    for i,ii,s,ss in rpkm.values():
+        lane1.append(i)
+        lane2.append(ii)
+        lane3.append(s)
+        lane4.append(ss)    
+    tot1=sum(lane1)
+    tot2=sum(lane2)
+    tot3=sum(lane3)
+    tot4=sum(lane4)
+    for i,ii,s,ss in rpkm.values(): 
+        mle=i*(i/tot1)   
+        mles1.append(mle)
+        mle=ii*(ii/tot2)
+        mles2.append(mle)
+        mle=s*(s/tot3)
+        mles3.append(mle)
+        mle=ss*(ss/tot4)
+        mles4.append(mle)
+    return mles1,mles2,mles3,mles4
+    
+def lrt(rpkm):
+    
+    """performs a likelihood ratio test ,obtains the p-value,NULL difference is 1"""
+    LRTs1=[]
+    LRTs2=[]
+    samp1=[]
+    samp2=[]
+    samp3=[]
+    samp4=[]
+    for i,ii,s,ss in rpkm.values():
+        samp1.append(i)
+        samp2.append(ii)
+        samp3.append(s)
+        samp4.append(ss)
+    tots1=[]
+    tots2=[]
+    tots3=[]
+    tots4=[]
+    for i,v in dict(Counter(samp1)).items():
+        tots1.append(i*v)   #####Number of reads times by frequency 
+    for i,v in dict(Counter(samp2)).items():
+        tots2.append(i*v)
+    for i,v in dict(Counter(samp3)).items():
+        tots3.append(i*v)
+    for i,v in dict(Counter(samp4)).items():
+        tots4.append(i*v)
+    mle1,mle2,mle3,mle4=mle(rpkm)
+    for i in range(0,len(mle1)):
+        N=sum([sum(tots1),sum(tots2),sum(tots3),sum(tots4)]) ###total N
+        print (-1*len(rpkm1.values()))*1+N*np.log2(1) 
+        NULL=(-1*len(rpkm1.values()))*1+N*np.log2(1)-math.factorial(int(N))
+        Alternative=(-1*sum(samp1))*mle1[i]-sum(samp3)*mle3[i]+sum(tots1)*np.log2(mle1[i])+sum(tots3)*np.log2(mle3[i])-math.factorial(int(N))#replicate 1
+        Alternative2=(-1*sum(samp2))*mle2[i]-sum(samp4)*mle4[i]+sum(tots2)*np.log2(mle2[i])+sum(tots4)*np.log2(mle4[i])-math.factorial(int(N))#replicate 2
+        LRT1=-2*(NULL-Alternative) #determine LRT replicate1
+        LRT2=-2*(NULL-Alternative2) # determine LRT replicate2
+        LRTs1.append(LRT1)
+        LRTs2.append(LRT2)
+    result={}
+    for i in range(0,len(rpkm.values())):
+        result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],LRTs1[i],LRTs2[i]]
+    return result
+        
+        
+res=lrt(rpkm1)        
 
 "Provide the raw count file for DE" 
 "http://www.ijbcb.org/DEB/php/onlinetool.php"
-      
-
-
 
