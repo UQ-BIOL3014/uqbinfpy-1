@@ -6,6 +6,7 @@ import itertools
 import operator
 import math
 import re
+from scipy import stats
 """This python module reads in sam files from RNA-seq experiment and processes them and RNA-seq data"""
 
     
@@ -473,86 +474,108 @@ def plotMA(rpkm_data,cutoff=[-1.5,1.5]):
     plt.legend(loc="upper left")
     plt.show()
 
+def plotMA_pval(rpkm_data,cutoff=0.05):
+    logfc=[]
+    avg_rpkm=[]
+    sig_logfc=[]
+    sig_avg_rpkm=[]
+    for i,ii,s,ss,pval in rpkm_data.values():
+        fc=np.log2(float(s+1)/(i+1))
+        if float(pval)<cutoff:
+            sig_logfc.append(fc)
+            sig_avg_rpkm.append(np.log2(s+1)+np.log2(i+1)/2)
+        else:
+            logfc.append(fc)
+            avg_rpkm.append(np.log2(s+1)+np.log2(i+1)/2)
+    plt.figure(1, figsize=(8,8))
+    ax = plt.axes([0.1, 0.1, 0.8, 0.8])
+    plt.plot(avg_rpkm,logfc,'o',color="blue",label="rep1")
+    plt.plot(sig_avg_rpkm,sig_logfc,'o',color="red",label="sig rep1")
+    plt.ylabel("Fold Change (log2)")
+    plt.xlabel("Average RPKM (log2)")
+    plt.title("MA plot")
+    plt.legend(loc="upper left")
+    plt.show()
         
    
-#########Test Methods
-##
-##        
-##t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
-##
-### determine the number of reads 
-##reads=numberofreads(t1)
-##print "number of reads",reads
-##
-###base composition
-##base=base_percentages(t1)
-##print base
-##
-###obtain the mapped reads 
-##mapped_read=mapped_reads(t1,True)
-##print mapped_read[0:5] 
-##
-###number of mapped bases
-##num_bases=mappedBases(mapped_read)
-##print "number of mapped bases",num_bases
-##
-##
-##
-##############################################
-###Group the mapped_reads                    #
-##############################################
-#####get the range of numbers that comprimise the mapping quality 
-##nums=[]
-##for read in mapped_read:
-##    nums.append(read[4])
-##nums=set(nums)
-##print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
-#####Get the probability MAPQ=-10*log10*Pr{mapping position is wrong} 
-##for num in nums:
-##    score=inv_logit(int(num))
-##    print "MAPQ and probability"
-##    print num,score
-##    
-##group1,group2,group3=subgroups(mapped_read)
-##
-###dinuc frequency of the mapped reads
-##
-##nuc=dinuc_freq(group1)
-##print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
-##
-###get the percentage of reads aligned need to know number of entries in fastq file 
-##percent=PercentReadsAligned(group1,group2,group3,reads)
-##print percent
-##
-##
-##stats=length_stats(group1,group2,group3)
-##print stats 
-##
-###plot the length of all three subgroups
-##plot_length_distrib(group1,"p<1e-3")
-##plot_length_distrib(group2,"1e-3<=p<1e-2")
-##plot_length_distrib(group3,"1e-2<=p<1")
-##
-###plot nucleotide composition along the mapped read
-##data=plot_base_composition(group1,'A')
-##data=plot_base_composition(group1,'T')
-##data=plot_base_composition(group1,'C')
-##data=plot_base_composition(group1,'G')
-##
-########read transcripts processed
-##
-##
-##
-##t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
-##t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
-##t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
-##t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
-##
-####get number of mapped reads printed to screen 
-##mapped_read=mapped_reads(t1,True)
-##mapped_read=mapped_reads(t10,True)
-##mapped_read=mapped_reads(t1_2,True)
-##mapped_read=mapped_reads(t10_2,True)
+#######Test Methods
+
+        
+t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+
+# determine the number of reads 
+reads=numberofreads(t1)
+print "number of reads",reads
+
+#base composition
+base=base_percentages(t1)
+print base
+
+#obtain the mapped reads 
+mapped_read=mapped_reads(t1,True)
+print mapped_read[0:5] 
+
+#number of mapped bases
+num_bases=mappedBases(mapped_read)
+print "number of mapped bases",num_bases
+
+
+
+############################################
+#Group the mapped_reads                    #
+############################################
+###get the range of numbers that comprimise the mapping quality 
+nums=[]
+for read in mapped_read:
+    nums.append(read[4])
+nums=set(nums)
+print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
+###Get the probability MAPQ=-10*log10*Pr{mapping position is wrong} 
+for num in nums:
+    score=inv_logit(int(num))
+    print "MAPQ and probability"
+    print num,score
+    
+group1,group2,group3=subgroups(mapped_read)
+
+#dinuc frequency of the mapped reads
+
+nuc=dinuc_freq(group1)
+print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
+
+#get the percentage of reads aligned need to know number of entries in fastq file 
+percent=PercentReadsAligned(group1,group2,group3,reads)
+print percent
+
+
+stats=length_stats(group1,group2,group3)
+print stats 
+
+#plot the length of all three subgroups
+plot_length_distrib(group1,"p<1e-3")
+plot_length_distrib(group2,"1e-3<=p<1e-2")
+plot_length_distrib(group3,"1e-2<=p<1")
+
+#plot nucleotide composition along the mapped read
+data=plot_base_composition(group1,'A')
+data=plot_base_composition(group1,'T')
+data=plot_base_composition(group1,'C')
+data=plot_base_composition(group1,'G')
+
+######read transcripts processed
+
+
+
+t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
+t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
+t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
+
+##get number of mapped reads printed to screen 
+mapped_read=mapped_reads(t1,True)
+mapped_read=mapped_reads(t10,True)
+mapped_read=mapped_reads(t1_2,True)
+mapped_read=mapped_reads(t10_2,True)
 
 raw_data=raw_count_reader("/Users/samirlal/Desktop/sam/raw_counts.txt")
 
@@ -581,85 +604,123 @@ get_boxplots(meth1,orig)
 plotavg_cv(meth1,orig)
 
 
-#####DE expression statistical test
-plotMA(rpkm1)#Visualise MA plot
+#####DE expression statistical test (T-Test, ANOVA and FDR)
 
 
-def mle(rpkm):
-    """maximum likelihood estimation according to poisson distribution for the number of changes per transcript across replicates"""
-    lane1=[]
-    lane2=[]
-    lane3=[]
-    lane4=[]
-    mles1=[]
-    mles2=[]
-    mles3=[]
-    mles4=[]
-    for i,ii,s,ss in rpkm.values():
-        lane1.append(i)
-        lane2.append(ii)
-        lane3.append(s)
-        lane4.append(ss)    
-    tot1=sum(lane1)
-    tot2=sum(lane2)
-    tot3=sum(lane3)
-    tot4=sum(lane4)
-    for i,ii,s,ss in rpkm.values(): 
-        mle=i*(i/tot1)   
-        mles1.append(mle)
-        mle=ii*(ii/tot2)
-        mles2.append(mle)
-        mle=s*(s/tot3)
-        mles3.append(mle)
-        mle=ss*(ss/tot4)
-        mles4.append(mle)
-    return mles1,mles2,mles3,mles4
-    
-def lrt(rpkm):
-    
-    """performs a likelihood ratio test ,obtains the p-value,NULL difference is 1"""
-    LRTs1=[]
-    LRTs2=[]
-    samp1=[]
-    samp2=[]
-    samp3=[]
-    samp4=[]
-    for i,ii,s,ss in rpkm.values():
-        samp1.append(i)
-        samp2.append(ii)
-        samp3.append(s)
-        samp4.append(ss)
-    tots1=[]
-    tots2=[]
-    tots3=[]
-    tots4=[]
-    for i,v in dict(Counter(samp1)).items():
-        tots1.append(i*v)   #####Number of reads times by frequency 
-    for i,v in dict(Counter(samp2)).items():
-        tots2.append(i*v)
-    for i,v in dict(Counter(samp3)).items():
-        tots3.append(i*v)
-    for i,v in dict(Counter(samp4)).items():
-        tots4.append(i*v)
-    mle1,mle2,mle3,mle4=mle(rpkm)
-    for i in range(0,len(mle1)):
-        N=sum([sum(tots1),sum(tots2),sum(tots3),sum(tots4)]) ###total N
-        print (-1*len(rpkm1.values()))*1+N*np.log2(1) 
-        NULL=(-1*len(rpkm1.values()))*1+N*np.log2(1)-math.factorial(int(N))
-        Alternative=(-1*sum(samp1))*mle1[i]-sum(samp3)*mle3[i]+sum(tots1)*np.log2(mle1[i])+sum(tots3)*np.log2(mle3[i])-math.factorial(int(N))#replicate 1
-        Alternative2=(-1*sum(samp2))*mle2[i]-sum(samp4)*mle4[i]+sum(tots2)*np.log2(mle2[i])+sum(tots4)*np.log2(mle4[i])-math.factorial(int(N))#replicate 2
-        LRT1=-2*(NULL-Alternative) #determine LRT replicate1
-        LRT2=-2*(NULL-Alternative2) # determine LRT replicate2
-        LRTs1.append(LRT1)
-        LRTs2.append(LRT2)
+def Welcht(rpkm):
+    """Performs Welchs T-statistic (one-tailed)"""
+    ts=[]
     result={}
+    for i,ii,s,ss in rpkm.values():
+        sd1=np.std([i,ii])
+        sd2=np.std([s,ss])
+        t=(np.mean([s,ss])-np.mean([i,ii]))/(math.sqrt(((float(sd2)/2)+(float(sd1)/2))))
+        ts.append(t)
+    pvals=[]
+    for t in ts:
+        pval = stats.t.sf(np.abs(t), 2-1)
+        if pval==float('nan'):
+            pval=1
+            pvals.append(pval)
+        else:
+            pval=pval
+            pvals.append(pval)
+    corr_pvals=correct_pvalues_for_multiple_testing(pvals, correction_type = "Benjamini-Hochberg")
     for i in range(0,len(rpkm.values())):
-        result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],LRTs1[i],LRTs2[i]]
+        result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],corr_pvals[i]]
     return result
+
+    
+def ANOVA(rpkm):
+    """Performs ANOVA"""
+    Sg1=[]
+    Sg2=[]
+    Sg3=[]
+    Sg4=[]
+    for i,ii,s,ss in rpkm.values():
+        SS=(i-np.mean([i,ii]))**2
+        SS2=(ii-np.mean([i,ii]))**2
+        SS_1=(s-np.mean([s,ss]))**2
+        SS_2=(ss-np.mean([s,ss]))**2
+        Sg1.append(float(SS))
+        Sg2.append(float(SS2))
+        Sg3.append(float(SS_1))
+        Sg4.append(float(SS_2))
+    SSg=(sum(Sg1)+sum(Sg2)+sum(Sg3)+sum(Sg4))
+    pvals=[]
+    for i,ii,s,ss in rpkm.values():
+        f=float((np.mean([s,ss])-np.mean([i,ii]))**2)/(SSg*(0.25)) #1/n + 1/n =1/2+1/2=1/4 or 0.25
+        p=stats.f.pdf(f,2,2)
+        pvals.append(p)
+    cor_pvals=correct_pvalues_for_multiple_testing(pvals, correction_type = "Benjamini-Hochberg")
+    final={}
+    for i in range(0,len(rpkm.values())):
+        final[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],cor_pvals[i]]
+    return final
         
         
-res=lrt(rpkm1)        
+    
+  
 
-"Provide the raw count file for DE" 
-"http://www.ijbcb.org/DEB/php/onlinetool.php"
 
+def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):                
+    """                                                                                                   
+    consistent with R print correct_pvalues_for_multiple_testing([0.0, 0.01, 0.029, 0.03, 0.031, 0.05, 0.069, 0.07, 0.071, 0.09, 0.1]) 
+    """
+    from numpy import array, empty                                                                        
+    pvalues = array(pvalues) 
+    n = float(pvalues.shape[0])                                                                           
+    new_pvalues = empty(n)
+    if correction_type == "Bonferroni":                                                                   
+        new_pvalues = n * pvalues
+    elif correction_type == "Bonferroni-Holm":                                                            
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+        values.sort()
+        for rank, vals in enumerate(values):                                                              
+            pvalue, i = vals
+            new_pvalues[i] = (n-rank) * pvalue                                                            
+    elif correction_type == "Benjamini-Hochberg":                                                         
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+        values.sort()
+        values.reverse()                                                                                  
+        new_values = []
+        for i, vals in enumerate(values):                                                                 
+            rank = n - i
+            pvalue, index = vals                                                                          
+            new_values.append((n/rank) * pvalue)                                                          
+        for i in xrange(0, int(n)-1):  
+            if new_values[i] < new_values[i+1]:                                                           
+                new_values[i+1] = new_values[i]                                                           
+        for i, vals in enumerate(values):
+            pvalue, index = vals
+            new_pvalues[index] = new_values[i]                                                                                                                  
+    return new_pvalues
+        
+    
+        
+
+
+####Now try to plot MA using the FDR adjusted p-value using BH
+plotMA(rpkm1)#Visualise MA plot
+result_ttest=Welcht(rpkm1)
+plotMA_pval(result_ttest,0.01)#plot those with corrected p-value less than 0.005
+result_anova=ANOVA(rpkm1)
+plotMA_pval(result_anova,0.05)#less stringent
+
+
+
+####Get diff expressed genes
+
+print"Genes significant by Welch t-test p<0.01"
+for i in range(0,len(result_ttest)):
+    if result_ttest.values()[i][4]<0.01:
+        print result_ttest.keys()[i]
+print "Genes significant by Anova p<0.05"
+for i in range(0,len(result_anova)):
+    if result_anova.values()[i][4]<0.05:
+        print result_anova.keys()[i]
+
+
+
+#Get the gene names
+#navigate to uniprot ID Mapping  from:Ensemble Genomes to:UniprotKB
