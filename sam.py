@@ -496,6 +496,68 @@ def plotMA_pval(rpkm_data,cutoff=0.05):
     plt.title("MA plot")
     plt.legend(loc="upper left")
     plt.show()
+
+
+#####DE expression statistical test (T-Test, ANOVA and FDR)
+
+
+def Welcht(rpkm):
+    """Performs Welchs T-statistic (one-tailed)"""
+    ts=[]
+    result={}
+    for i,ii,s,ss in rpkm.values():
+        sd1=np.std([i,ii])
+        sd2=np.std([s,ss])
+        t=(np.mean([s,ss])-np.mean([i,ii]))/(math.sqrt(((float(sd2)/2)+(float(sd1)/2))))
+        ts.append(t)
+    pvals=[]
+    for t in ts:
+        pval = stats.t.sf(np.abs(t), 2-1)
+        if pval==float('nan'):
+            pval=1
+            pvals.append(pval)
+        else:
+            pval=pval
+            pvals.append(pval)
+    corr_pvals=correct_pvalues_for_multiple_testing(pvals, correction_type = "Benjamini-Hochberg")
+    for i in range(0,len(rpkm.values())):
+        result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],corr_pvals[i]]
+    return result
+    
+  
+
+def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):                
+    """                                                                                                   
+    consistent with R print correct_pvalues_for_multiple_testing([0.0, 0.01, 0.029, 0.03, 0.031, 0.05, 0.069, 0.07, 0.071, 0.09, 0.1]) 
+    """
+    from numpy import array, empty                                                                        
+    pvalues = array(pvalues) 
+    n = float(pvalues.shape[0])                                                                           
+    new_pvalues = empty(n)
+    if correction_type == "Bonferroni":                                                                   
+        new_pvalues = n * pvalues
+    elif correction_type == "Bonferroni-Holm":                                                            
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+        values.sort()
+        for rank, vals in enumerate(values):                                                              
+            pvalue, i = vals
+            new_pvalues[i] = (n-rank) * pvalue                                                            
+    elif correction_type == "Benjamini-Hochberg":                                                         
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+        values.sort()
+        values.reverse()                                                                                  
+        new_values = []
+        for i, vals in enumerate(values):                                                                 
+            rank = n - i
+            pvalue, index = vals                                                                          
+            new_values.append((n/rank) * pvalue)                                                          
+        for i in xrange(0, int(n)-1):  
+            if new_values[i] < new_values[i+1]:                                                           
+                new_values[i+1] = new_values[i]                                                           
+        for i, vals in enumerate(values):
+            pvalue, index = vals
+            new_pvalues[index] = new_values[i]                                                                                                                  
+    return new_pvalues
         
    
 #######Test Methods
@@ -604,77 +666,11 @@ get_boxplots(meth1,orig)
 plotavg_cv(meth1,orig)
 
 
-#####DE expression statistical test (T-Test, ANOVA and FDR)
-
-
-def Welcht(rpkm):
-    """Performs Welchs T-statistic (one-tailed)"""
-    ts=[]
-    result={}
-    for i,ii,s,ss in rpkm.values():
-        sd1=np.std([i,ii])
-        sd2=np.std([s,ss])
-        t=(np.mean([s,ss])-np.mean([i,ii]))/(math.sqrt(((float(sd2)/2)+(float(sd1)/2))))
-        ts.append(t)
-    pvals=[]
-    for t in ts:
-        pval = stats.t.sf(np.abs(t), 2-1)
-        if pval==float('nan'):
-            pval=1
-            pvals.append(pval)
-        else:
-            pval=pval
-            pvals.append(pval)
-    corr_pvals=correct_pvalues_for_multiple_testing(pvals, correction_type = "Benjamini-Hochberg")
-    for i in range(0,len(rpkm.values())):
-        result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],corr_pvals[i]]
-    return result
-    
-  
-
-def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):                
-    """                                                                                                   
-    consistent with R print correct_pvalues_for_multiple_testing([0.0, 0.01, 0.029, 0.03, 0.031, 0.05, 0.069, 0.07, 0.071, 0.09, 0.1]) 
-    """
-    from numpy import array, empty                                                                        
-    pvalues = array(pvalues) 
-    n = float(pvalues.shape[0])                                                                           
-    new_pvalues = empty(n)
-    if correction_type == "Bonferroni":                                                                   
-        new_pvalues = n * pvalues
-    elif correction_type == "Bonferroni-Holm":                                                            
-        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
-        values.sort()
-        for rank, vals in enumerate(values):                                                              
-            pvalue, i = vals
-            new_pvalues[i] = (n-rank) * pvalue                                                            
-    elif correction_type == "Benjamini-Hochberg":                                                         
-        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
-        values.sort()
-        values.reverse()                                                                                  
-        new_values = []
-        for i, vals in enumerate(values):                                                                 
-            rank = n - i
-            pvalue, index = vals                                                                          
-            new_values.append((n/rank) * pvalue)                                                          
-        for i in xrange(0, int(n)-1):  
-            if new_values[i] < new_values[i+1]:                                                           
-                new_values[i+1] = new_values[i]                                                           
-        for i, vals in enumerate(values):
-            pvalue, index = vals
-            new_pvalues[index] = new_values[i]                                                                                                                  
-    return new_pvalues
-        
-    
-        
-
 
 ####Now try to plot MA using the FDR adjusted p-value using BH
 plotMA(rpkm1)#Visualise MA plot
 result_ttest=Welcht(rpkm1)
 plotMA_pval(result_ttest,0.01)#plot those with corrected p-value less than 0.005
-
-
 
 
 ####Get diff expressed genes
@@ -683,8 +679,6 @@ print"Genes significant by Welch t-test p<0.01"
 for i in range(0,len(result_ttest)):
     if result_ttest.values()[i][4]<0.01:
         print result_ttest.keys()[i]
-
-
 
 
 #Get the gene names
