@@ -629,39 +629,8 @@ def Welcht(rpkm):
     for i in range(0,len(rpkm.values())):
         result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],corr_pvals[i]]
     return result
-
-    
-def ANOVA(rpkm):
-    """Performs ANOVA"""
-    Sg1=[]
-    Sg2=[]
-    Sg3=[]
-    Sg4=[]
-    for i,ii,s,ss in rpkm.values():
-        SS=(i-np.mean([i,ii]))**2
-        SS2=(ii-np.mean([i,ii]))**2
-        SS_1=(s-np.mean([s,ss]))**2
-        SS_2=(ss-np.mean([s,ss]))**2
-        Sg1.append(float(SS))
-        Sg2.append(float(SS2))
-        Sg3.append(float(SS_1))
-        Sg4.append(float(SS_2))
-    SSg=(sum(Sg1)+sum(Sg2)+sum(Sg3)+sum(Sg4))
-    pvals=[]
-    for i,ii,s,ss in rpkm.values():
-        f=float((np.mean([s,ss])-np.mean([i,ii]))**2)/(SSg*(0.25)) #1/n + 1/n =1/2+1/2=1/4 or 0.25
-        p=stats.f.pdf(f,2,2)
-        pvals.append(p)
-    cor_pvals=correct_pvalues_for_multiple_testing(pvals, correction_type = "Benjamini-Hochberg")
-    final={}
-    for i in range(0,len(rpkm.values())):
-        final[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],cor_pvals[i]]
-    return final
-        
-        
     
   
-
 
 def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):                
     """                                                                                                   
@@ -704,8 +673,7 @@ def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-H
 plotMA(rpkm1)#Visualise MA plot
 result_ttest=Welcht(rpkm1)
 plotMA_pval(result_ttest,0.01)#plot those with corrected p-value less than 0.005
-result_anova=ANOVA(rpkm1)
-plotMA_pval(result_anova,0.05)#less stringent
+
 
 
 
@@ -715,10 +683,7 @@ print"Genes significant by Welch t-test p<0.01"
 for i in range(0,len(result_ttest)):
     if result_ttest.values()[i][4]<0.01:
         print result_ttest.keys()[i]
-print "Genes significant by Anova p<0.05"
-for i in range(0,len(result_anova)):
-    if result_anova.values()[i][4]<0.05:
-        print result_anova.keys()[i]
+
 
 
 
