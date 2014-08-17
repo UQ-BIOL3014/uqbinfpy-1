@@ -610,8 +610,8 @@ percent=PercentReadsAligned(group1,group2,group3,reads)
 print percent
 
 
-stats=length_stats(group1,group2,group3)
-print stats 
+len_stats=length_stats(group1,group2,group3)
+print len_stats 
 
 #plot the length of all three subgroups
 plot_length_distrib(group1,"p<1e-3")
