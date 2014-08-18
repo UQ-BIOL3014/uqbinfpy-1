@@ -558,6 +558,54 @@ def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-H
             pvalue, index = vals
             new_pvalues[index] = new_values[i]                                                                                                                  
     return new_pvalues
+
+
+####Method Run hiearachical clustering on the correlation matrix (of differentially expressed genes) -Coexpression
+import scipy.cluster.hierarchy as sch
+
+def cluster_data(data_matrix,genenames,timepoint):
+    "between 2 replicates at a specific time point"
+    D = np.zeros([np.shape(data_matrix)[0],1])
+    ##generate a distance matrix
+    for i in range(np.shape(data_matrix)[0]):
+        for j in range(1):
+            D[i,j] = abs(data_matrix[i] - data_matrix[j])**2  #use Wards method (other methods could be implemented here)
+    labels=list('' for i in range(np.shape(data_matrix)[0]))
+    for i in range(np.shape(data_matrix)[0]):
+        labels[i]=str(genenames[i])
+    fig=plt.figure(1, figsize=(17,8))
+    linked = sch.linkage(D, method='centroid')
+    dend = sch.dendrogram(linked, orientation='right',labels=labels) # sets the oirentation root at the right
+    plt.title(timepoint)
+    fig.savefig(timepoint+'dendogram.png')
+
+def heatmap_cluster(data_matrix,timepoint):
+    """Produces a heatmap of the clustered count data"""
+    D = np.zeros([np.shape(data_matrix)[0],np.shape(data_matrix)[0]])
+    for i in range(np.shape(data_matrix)[0]):
+        for j in range(np.shape(data_matrix)[0]):
+            D[i,j] = abs(data_matrix[i] - data_matrix[j])**2  #use Wards method (other methods could be implemented here)
+    fig = plt.figure()
+    axdendro = fig.add_axes([0.09,0.1,0.2,0.8])
+    linked = sch.linkage(D, method='centroid')
+    dend = sch.dendrogram(linked, orientation='right') # sets the oirentation root at the right
+    axdendro.set_xticks([])
+    axdendro.set_yticks([])
+    #plot distance matrix 
+    axmatrix = fig.add_axes([0.3,0.1,0.6,0.8])
+    index = dend['leaves']
+    D=D[index,:]
+    D=D[:,index]
+    im = axmatrix.matshow(D, aspect='auto', origin='lower')
+    axmatrix.set_xticks([])
+    axmatrix.set_yticks([])
+    #plot color bar
+    axcolor = fig.add_axes([0.91,0.1,0.02,0.8])
+    fig.colorbar(im, cax=axcolor)
+    #display the heatmap
+    fig.savefig(timepoint+'heatmap.png')
+    
+    
         
    
 #######Test Methods
@@ -675,11 +723,34 @@ plotMA_pval(result_ttest,0.01)#plot those with corrected p-value less than 0.005
 
 ####Get diff expressed genes
 
+
+diff_express_t1={}
+diff_express_t1_both={}
+diff_express_t10={}
 print"Genes significant by Welch t-test p<0.01"
 for i in range(0,len(result_ttest)):
     if result_ttest.values()[i][4]<0.01:
         print result_ttest.keys()[i]
+        diff_express_t1[result_ttest.keys()[i]]=result_ttest.values()[i][0] #take the first replicate
+        diff_express_t10[result_ttest.keys()[i]]=result_ttest.values()[i][2]#take first replicate
+        
+        
+t1_diff=np.array(diff_express_t1.values())
+t10_diff=np.array(diff_express_t10.values())
 
 
-#Get the gene names
-#navigate to uniprot ID Mapping  from:Ensemble Genomes to:UniprotKB
+
+######################check plots in current directory   #coexpression through distance based methods
+#cluster the data 
+cluster_data(t1_diff,diff_express_t1.keys(),"t1")
+cluster_data(t10_diff,diff_express_t10.keys(),"t10")
+
+#produce heatmap
+heatmap_cluster(t1_diff,'t1')
+heatmap_cluster(t10_diff,'t10')
+
+    
+    
+
+
+
