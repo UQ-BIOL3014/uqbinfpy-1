@@ -564,7 +564,7 @@ def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-H
 import scipy.cluster.hierarchy as sch
 
 def cluster_data(data_matrix,genenames,timepoint):
-    "between 2 replicates at a specific time point"
+    "One replicates at a specific time point"
     D = np.zeros([np.shape(data_matrix)[0],1])
     ##generate a distance matrix
     for i in range(np.shape(data_matrix)[0]):
