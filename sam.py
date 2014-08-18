@@ -572,12 +572,13 @@ def cluster_data(data_matrix,genenames,timepoint):
             D[i,j] = abs(data_matrix[i] - data_matrix[j])**2  #use Wards method (other methods could be implemented here)
     labels=list('' for i in range(np.shape(data_matrix)[0]))
     for i in range(np.shape(data_matrix)[0]):
-        labels[i]=str(genenames[i])
+        labels[i]=str(i)+","+str(genenames[i])
     fig=plt.figure(1, figsize=(17,8))
     linked = sch.linkage(D, method='centroid')
     dend = sch.dendrogram(linked, orientation='right',labels=labels) # sets the oirentation root at the right
     plt.title(timepoint)
     fig.savefig(timepoint+'dendogram.png')
+    return dend['ivl']
 
 def heatmap_cluster(data_matrix,timepoint):
     """Produces a heatmap of the clustered count data"""
@@ -742,8 +743,8 @@ t10_diff=np.array(diff_express_t10.values())
 
 ######################check plots in current directory   #coexpression through distance based methods
 #cluster the data 
-cluster_data(t1_diff,diff_express_t1.keys(),"t1")
-cluster_data(t10_diff,diff_express_t10.keys(),"t10")
+dend_t1=cluster_data(t1_diff,diff_express_t1.keys(),"t1")
+dendt10=cluster_data(t10_diff,diff_express_t10.keys(),"t10")
 
 #produce heatmap
 heatmap_cluster(t1_diff,'t1')
