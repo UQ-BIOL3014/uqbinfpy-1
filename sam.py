@@ -609,7 +609,7 @@ def heatmap_cluster(data_matrix,timepoint):
     
         
    
-#######Test Methods
+#########Test Methods
 
         
 t1=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
@@ -725,16 +725,34 @@ plotMA_pval(result_ttest,0.01)#plot those with corrected p-value less than 0.005
 ####Get diff expressed genes
 
 
+sig_gene1=[]
+sig_gene2=[]
+for i in range(0,len(rpkm1.values())):
+    fc=np.log2(float(rpkm1.values()[i][2]+1)/(rpkm1.values()[i][0]+1))
+    if fc<-1.5 or fc>1.5:
+        sig_gene1.append(rpkm1.keys()[i])
+    else:
+        pass
+for i in range(0,len(rpkm1.values())):
+    fc2=np.log2(float(rpkm1.values()[i][3]+1)/(rpkm1.values()[i][1]+1))
+    if fc2<-1.5 or fc2>1.5:
+        sig_gene2.append(rpkm1.keys()[i])
+    else:
+        pass
+
+common=list(set(sig_gene1).intersection(set(sig_gene2)))
+
 diff_express_t1={}
 diff_express_t1_both={}
 diff_express_t10={}
 print"Genes significant by Welch t-test p<0.01"
 for i in range(0,len(result_ttest)):
     if result_ttest.values()[i][4]<0.01:
-        print result_ttest.keys()[i]
-        diff_express_t1[result_ttest.keys()[i]]=result_ttest.values()[i][0] #take the first replicate
-        diff_express_t10[result_ttest.keys()[i]]=result_ttest.values()[i][2]#take first replicate
-        
+        if result_ttest.keys()[i] in common:
+            print result_ttest.keys()[i]
+            diff_express_t1[result_ttest.keys()[i]]=result_ttest.values()[i][0] #take the first replicate
+            diff_express_t10[result_ttest.keys()[i]]=result_ttest.values()[i][2]#take first replicate
+            
         
 t1_diff=np.array(diff_express_t1.values())
 t10_diff=np.array(diff_express_t10.values())
