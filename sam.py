@@ -395,12 +395,12 @@ def get_cv(data1,condition):
                 cvs.append(cv) 
     else:
         for i in range(0,len(data1.values())):
-            mean = np.mean([data1.values()[i][3],data1.values()[i][4]])
-            std=np.std([data1.values()[i][3],data1.values()[i][4]])
+            mean = np.mean([data1.values()[i][2],data1.values()[i][3]])
+            std=np.std([data1.values()[i][2],data1.values()[i][3]])
             if mean==0.0 and std==0.0:
                 pass
             else:
-                cv=mean+1/std+1
+                cv=float(mean+1)/(std+1)
                 cvs.append(cv)          
     return cvs 
         
@@ -612,7 +612,7 @@ def heatmap_cluster(data_matrix,timepoint):
 #######Test Methods
 
         
-t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
+t1=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
 
 # determine the number of reads 
 reads=numberofreads(t1)
@@ -705,8 +705,8 @@ plotMAreprpkm(rpkm1,"t10")
 #######################################
 
 ####Get CV 
-meth1= get_cv(rpkm1,"t1")
-orig=get_cv(raw_data,"t1")
+meth1= get_cv(rpkm1,"t10")
+orig=get_cv(raw_data,"t10")
 
 
 ####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases) 
