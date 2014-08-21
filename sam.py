@@ -479,6 +479,10 @@ def plotMA_pval(rpkm_data,cutoff=0.05):
     avg_rpkm=[]
     sig_logfc=[]
     sig_avg_rpkm=[]
+    logfc2=[]
+    avg_rpkm2=[]
+    sig_logfc2=[]
+    sig_avg_rpkm2=[]
     for i,ii,s,ss,pval in rpkm_data.values():
         fc=np.log2(float(s+1)/(i+1))
         if float(pval)<cutoff:
@@ -487,10 +491,20 @@ def plotMA_pval(rpkm_data,cutoff=0.05):
         else:
             logfc.append(fc)
             avg_rpkm.append(np.log2(s+1)+np.log2(i+1)/2)
+    for i,ii,s,ss,pval in rpkm_data.values():
+        fc2=np.log2(float(ss+1)/(ii+1))
+        if float(pval)<cutoff:
+            sig_logfc2.append(fc2)
+            sig_avg_rpkm2.append(np.log2(ss+1)+np.log2(ii+1)/2)
+        else:
+            logfc2.append(fc2)
+            avg_rpkm2.append(np.log2(ss+1)+np.log2(ii+1)/2)
     plt.figure(1, figsize=(8,8))
     ax = plt.axes([0.1, 0.1, 0.8, 0.8])
     plt.plot(avg_rpkm,logfc,'o',color="blue",label="rep1")
+    plt.plot(avg_rpkm2,logfc2,'o',color="blue",label="rep2")
     plt.plot(sig_avg_rpkm,sig_logfc,'o',color="red",label="sig rep1")
+    plt.plot(sig_avg_rpkm2,sig_logfc2,'x',color="red",label="sig rep2")
     plt.ylabel("Fold Change (log2)")
     plt.xlabel("Average RPKM (log2)")
     plt.title("MA plot")
@@ -705,8 +719,8 @@ plotMAreprpkm(rpkm1,"t10")
 #######################################
 
 ####Get CV 
-meth1= get_cv(rpkm1,"t10")
-orig=get_cv(raw_data,"t10")
+meth1= get_cv(rpkm1,"t1")
+orig=get_cv(raw_data,"t1")
 
 
 ####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases) 
