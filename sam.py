@@ -239,6 +239,7 @@ def plot_base_composition(reads,sym):
 #Transcript reader
 
 def raw_count_reader(filename):
+    """Count the raw counts in the file"""
     data={}
     f= open(filename,'r')
     for row in f:
@@ -255,49 +256,28 @@ def raw_count_reader(filename):
 
 def get_RPKM(data,num_map1,num_map2,num_map3,num_map4):
     """provide number of mapped reads for the two groups of interest and raw count data .This method provides length normalisation to prevent length and total count bias"""
-    counts1=[];counts2=[];counts3=[];counts4=[];lengths=[]
+    all_rpkms=[];final={}
     for i,s,ii,ss,v in data.values():
-        counts1.append(i)
-        counts2.append(s)
-        counts3.append(ii)
-        counts4.append(ss)
-        lengths.append(v)
-    rpkms=[];rpkms2=[];rpkms3=[];rpkms4=[];final={}
-    #perform RPKM calc
-    for i in range(0,len(counts1)):
-        if counts1[i]==0:
-            rpkm=0
-            rpkms.append(rpkm)
-        else:
-            rpkm=float(counts1[i])/(lengths[i]*(float(num_map1)/10**6))
-            rpkms.append(rpkm)
-    for i in range(0,len(counts2)):
-        if counts2[i]==0:
-            rpkm=0
-            rpkms2.append(rpkm)
-        else:
-            rpkm=float(counts2[i])/(lengths[i]*(float(num_map2)/10**6))
-            rpkms2.append(rpkm)
-    for i in range(0,len(counts3)):
-        if counts3[i]==0:
-            rpkm=0
-            rpkms3.append(rpkm)
-        else:
-            rpkm=float(counts3[i])/(lengths[i]*(float(num_map3)/10**6))
-            rpkms3.append(rpkm)
-    for i in range(0,len(counts4)):
-        if counts4[i]==0:
-            rpkm=0
-            rpkms4.append(rpkm)
-        else:
-            rpkm=float(counts4[i])/(lengths[i]*(float(num_map4)/10**6))
-            rpkms4.append(rpkm)
+        rpkms=[]
+        num_mapped_reads=[num_map1,num_map2,num_map3,num_map4]
+        vals=[i,s,ii,ss]
+        lengths=[v,v,v,v]
+        for n in range(0,len(vals)):
+            if vals[n]==0:
+                rpkm=0
+                rpkms.append(rpkm)
+            else:
+                #perform RPKM calc
+                rpkm= float(vals[n])/(lengths[n]*(float(num_mapped_reads[n])/10**6))
+                rpkms.append(rpkm)
+        all_rpkms.append(rpkms)
     #return gene names and rpkms 
     for i in range(0,len(data.keys())):
-        final[data.keys()[i]]=[float(rpkms[i]),float(rpkms2[i]),float(rpkms3[i]),float(rpkms4[i])]
+        final[data.keys()[i]]=[float(all_rpkms[i][0]),float(all_rpkms[i][1]),float(all_rpkms[i][2]),float(all_rpkms[i][3])]
     return final 
 
 def write_RPKM_data(RPKM_data,filename):
+    """write RPKM data to a file"""
     f=open(filename,'w')
     for i in range(0,len(RPKM_data)):
         f.write("%s\t%d\t%d\t%d\t%d\n"%(RPKM_data.keys()[i],int(RPKM_data.values()[i][0]),int(RPKM_data.values()[i][1]),int(RPKM_data.values()[i][2]),int(RPKM_data.values()[i][3])))
@@ -309,6 +289,7 @@ def write_RPKM_data(RPKM_data,filename):
 ###############Visualize replicates to determine degree of biological variation
 
 def pearson_def(x, y):
+    """Pearson correlation coefficient R"""
     assert len(x) == len(y)
     n = len(x)
     assert n > 0
@@ -436,6 +417,7 @@ def plotavg_cv(norm,original):
 
 
 def plotMA(rpkm_data,cutoff=[-1.5,1.5]):
+    """Produce MA plot using logfold as cutoff"""
     logfc=[]
     avg_rpkm=[]
     sig_logfc=[]
@@ -475,6 +457,7 @@ def plotMA(rpkm_data,cutoff=[-1.5,1.5]):
     plt.show()
 
 def plotMA_pval(rpkm_data,cutoff=0.05):
+    """Produce MA plot using the pvalue as cutoff"""
     logfc=[]
     avg_rpkm=[]
     sig_logfc=[]
@@ -623,7 +606,7 @@ def heatmap_cluster(data_matrix,timepoint):
     
         
    
-#########Test Methods
+###########Test Methods
 
         
 t1=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
@@ -687,7 +670,7 @@ data=plot_base_composition(group1,'T')
 data=plot_base_composition(group1,'C')
 data=plot_base_composition(group1,'G')
 
-######read transcripts processed
+########read transcripts processed
 
 
 
@@ -721,13 +704,15 @@ plotMAreprpkm(rpkm1,"t10")
 ####Get CV 
 meth1= get_cv(rpkm1,"t1")
 orig=get_cv(raw_data,"t1")
-
+meth2= get_cv(rpkm1,"t10")
+orig2=get_cv(raw_data,"t10")
 
 ####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases) 
 
 get_boxplots(meth1,orig)
 plotavg_cv(meth1,orig)
-
+get_boxplots(meth2,orig2)
+plotavg_cv(meth2,orig2)
 
 
 ####Now try to plot MA using the FDR adjusted p-value using BH
