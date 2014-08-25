@@ -1,11 +1,9 @@
 from collections import Counter
-from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
 import operator
 import math
-import re
 from scipy import stats
 """This python module reads in sam files from RNA-seq experiment and processes them and RNA-seq data"""
 
@@ -609,7 +607,7 @@ def heatmap_cluster(data_matrix,timepoint):
 ###########Test Methods
 
         
-t1=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
+t1=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1.sam")
 
 # determine the number of reads 
 reads=numberofreads(t1)
@@ -674,10 +672,10 @@ data=plot_base_composition(group1,'G')
 
 
 
-t1=sam_reader("/Users/samirlal/Desktop/sam/t1.sam")
-t10=sam_reader("/Users/samirlal/Desktop/sam/t10.sam")
-t1_2=sam_reader("/Users/samirlal/Desktop/sam/t1_2.sam")
-t10_2=sam_reader("/Users/samirlal/Desktop/sam/t10_2.sam")
+t1=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1.sam")
+t10=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t10.sam")
+t1_2=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1_2.sam")
+t10_2=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t10_2.sam")
 
 ##get number of mapped reads printed to screen 
 mapped_read=mapped_reads(t1,True)
@@ -685,14 +683,14 @@ mapped_read=mapped_reads(t10,True)
 mapped_read=mapped_reads(t1_2,True)
 mapped_read=mapped_reads(t10_2,True)
 
-raw_data=raw_count_reader("/Users/samirlal/Desktop/sam/raw_counts.txt")
+raw_data=raw_count_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/raw_counts.txt")
 
 ### Perform the normalisation methods 
 
 rpkm1=get_RPKM(raw_data,118898,121634,136286,135102)
 
 # write RPKM to output 
-write_RPKM_data(rpkm1,"RPKM_counts.txt")
+write_RPKM_data(rpkm1,"/Users/mikael/workspace/binfpy/BIOL3014/prac_5/RPKM_counts.txt")
 
 #Visualize variability among replicates using RPKM
 plotreprpkm(rpkm1,"t1")
