@@ -73,7 +73,7 @@ def getReverse(distribs):
     return [d.swapxcopy('A','T').swapxcopy('C','G') for d in distribs[::-1]] # backwards
 
 
-def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
+def scanMotifReport(seqs, motif, threshold=0, jaspar = '../BIOL3014/prac_5/JASPAR_matrices.txt'):
     """ Produce a plot for a scan of the specified motif. 
         The plot has as its x-axis position of sequence, and 
         the y-axis the cumulative, non-negative PWM score over all sequences. """
@@ -85,7 +85,7 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
             return
 
     # create the motif and its reverse complemennt
-    bg = prb.Distrib(sym.DNA_Alphabet_wN, sequence.getCount(seqs))
+    bg = prb.Distrib(sym.DNA_Alphabet, sequence.getCount(seqs))
     d = prb.readMultiCounts(jaspar)
     try:
         fg1 = d[motif] 
@@ -108,7 +108,7 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
     motif_width = pwm1.length
     for seq in seqs:
         i_seq += 1
-        print >> sys.stderr, "Scoring seq: %4d\r" % (i_seq),
+        # print >> sys.stderr, "Scoring seq: %4d\r" % (i_seq),
 
         # positive strand
         hits = pwm1.search(seq, threshold)
@@ -133,26 +133,26 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
     for i in range(seq_len):
         avg_motif_score[i] /= len(seqs)
 
-    hw = 5               # window width is 2*h2 + 1
-    smoothed_avg_motif_score = np.zeros(seq_len)
-    for i in range(hw, seq_len-motif_width+1-hw):
-        smoothed_avg_motif_score[i]=sum(avg_motif_score[i-hw:i+hw+1])/(2*hw+1)
+    # hw = 5 # window width is 2*hw + 1
+    # smoothed_avg_motif_score = np.zeros(seq_len)
+    # for i in range(hw, seq_len-motif_width+1-hw):
+    #    smoothed_avg_motif_score[i]=sum(avg_motif_score[i-hw:i+hw+1])/(2*hw+1)
 
     # plot the average score curve
-    print >> sys.stderr, ""
+    # print >> sys.stderr, ""
     x = range(-(seq_len/2), (seq_len/2))    # call center of sequence X=0
     lbl = "%s" % (motif)
-    #plt.plot(x, avg_motif_score, label=lbl)
-    plt.plot(x, smoothed_avg_motif_score, label=lbl)
+    plt.plot(x, avg_motif_score, label=lbl)
+    #plt.plot(x, smoothed_avg_motif_score, label=lbl)
     plt.axhline(color='black', linestyle='dotted')
     plt.legend(loc='lower center')
     plt.xlabel('position')
     plt.ylabel('average motif score')
-    #plt.title(motif)
-    #plt.show()
+    plt.title(motif)
+    plt.show()
 
 
-def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices.txt', seed=0):
+def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = '../BIOL3014/prac_5/JASPAR_matrices.txt', seed=0):
     """ Produce a plot for a scan of the specified motif. 
         The plot has as its x-axis position of sequence, and 
         the y-axis the number of sequences with a best hit at position x. 
@@ -178,7 +178,7 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices
             return
 
     # create the motif and its reverse complemennt
-    bg = prb.Distrib(sym.DNA_Alphabet_wN, sequence.getCount(seqs))
+    bg = prb.Distrib(sym.DNA_Alphabet, sequence.getCount(seqs))
     d = prb.readMultiCounts(jaspar)
     try:
         fg1 = d[motif]
@@ -204,7 +204,7 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices
     i_seq = 0
     for seq in seqs:
         i_seq += 1
-        print >> sys.stderr, "Scoring seq: %4d\r" % (i_seq),
+        # print >> sys.stderr, "Scoring seq: %4d\r" % (i_seq),
         # scan with both motifs
         hits = pwm1.search(seq, threshold) + pwm2.search(seq, threshold)
         # Record position of best hit
@@ -223,7 +223,7 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices
 
     print >> sys.stderr, "Number of sequences with hit (score >= %f): %d" % (threshold, n_seqs_with_hits)
 
-    #
+    # STATISTICS
     # Get the cumulative hit counts in concentric windows
     # and perform the Binomial Test.  Report best region and its p-value.
     #
@@ -235,36 +235,40 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices
         cum_hit_count[i] = cum_hit_count[i-1] + hit_count[center-i] + hit_count[center+i]
         # Compute probability of observed or more best hits in central window
         # assuming uniform probability distribution in each sequence.
-        successes = cum_hit_count[i]
-        trials = n_seqs_with_hits
-        p_success = (2.0*i) / (seq_len - pwm1.length/2 + 1)
-        log_pvalue = binomial.log_binomial_ncdf(trials, successes, p_success);
-        if (log_pvalue < best_log_pvalue):
-            best_log_pvalue = log_pvalue
-            best_r = 2*i
+    #   successes = cum_hit_count[i]
+    #   trials = n_seqs_with_hits
+    #    p_success = ?
+    #    log_pvalue = ?
+    #    if (log_pvalue < best_log_pvalue):
+    #        best_log_pvalue = log_pvalue
+    #        best_r = 2*i
+    # End STATISTICS
 
     hw = 5
     smoothed_site_probability = np.zeros(seq_len)
     for i in range(hw, seq_len-motif_width+1-hw):
         smoothed_site_probability[i]=sum(site_probability[i-hw:i+hw+1])/(2*hw+1)
 
-    # plot the average score curve
-    print >> sys.stderr, ""
     x = range(-(seq_len/2), (seq_len/2))        # call center of sequence X=0
-    lbl = "%s" % (motif)
-    #plt.plot(x, avg_motif_score, label=lbl)
-    #plt.plot(x, smoothed_avg_motif_score, label=lbl)
-    #lbl = "%s, t=%.2f" % (motif, threshold)
-    lbl = "%s, t=%.2f, w=%d, p=%.2e" % (motif, threshold, best_r, math.exp(best_log_pvalue))
+    lbl = "%s, t=%.2f" % (motif, threshold)
+    #lbl = "%s, t=%.2f, w=%d, p=%.2e" % (motif, threshold, best_r, math.exp(best_log_pvalue))
     plt.plot(x, smoothed_site_probability, label=lbl)
     plt.axhline(color='black', linestyle='dotted')
     plt.legend(loc='lower center')
-    plt.xlabel('position')
-    plt.ylabel('average motif score')
-    #plt.title(motif)
-    #plt.show()
+    plt.xlabel('Position of best site')
+    plt.ylabel('Smoothed probability')
+    plt.title(motif)
+    plt.show()
                 
-
+def exercise(number):
+    from sequence import *
+    seqs = readFastaFile('../BIOL3014/prac_5/chip-seq-peaks.fasta', DNA_Alphabet)
+    if '1' in number:
+        scanMotifReport(seqs, 'MA9999')
+    if '2' in number:
+        scanMotifReport_new(seqs, 'MA9999')
+     
+    
 def usage(name, errmsg = None):
     if errmsg != None:
         print "Error: %s" % errmsg
@@ -290,7 +294,7 @@ if __name__ == '__main__':
     PEAK_WIDTH =    100
     PEAK_MARGIN =   100
     MOTIF_ID =      'MA0112.2'
-    JASPAR_FILE =   'JASPAR_matrices.txt'
+    JASPAR_FILE =   '../BIOL3014/prac_5/JASPAR_matrices.txt'
     for o, a in optlst:
         if   o == '-h': usage(sys.argv[0])
         elif o == '-f': FILENAME = a
@@ -311,3 +315,4 @@ if __name__ == '__main__':
         scanMotifReport(seqs, MOTIF_ID)
     else:
         usage(sys.argv[0], "No run mode selected")    
+
