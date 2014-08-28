@@ -260,15 +260,6 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = '../BIOL3014/pra
     plt.title(motif)
     plt.show()
                 
-def exercise(number):
-    from sequence import *
-    seqs = readFastaFile('../BIOL3014/prac_5/chip-seq-peaks.fasta', DNA_Alphabet)
-    if '1' in number:
-        scanMotifReport(seqs, 'MA9999')
-    if '2' in number:
-        scanMotifReport_new(seqs, 'MA9999')
-     
-    
 def usage(name, errmsg = None):
     if errmsg != None:
         print "Error: %s" % errmsg
@@ -294,7 +285,7 @@ if __name__ == '__main__':
     PEAK_WIDTH =    100
     PEAK_MARGIN =   100
     MOTIF_ID =      'MA0112.2'
-    JASPAR_FILE =   '../BIOL3014/prac_5/JASPAR_matrices.txt'
+    JASPAR_FILE =   'JASPAR_matrices.txt'
     for o, a in optlst:
         if   o == '-h': usage(sys.argv[0])
         elif o == '-f': FILENAME = a

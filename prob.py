@@ -307,7 +307,7 @@ import re
 def _readMultiCount(linelist, format = 'JASPAR'):
     ncol = 0
     symcount = {}
-    if format == 'JASPAR':
+    if format == 'JASPAR2010':
         for line in linelist:
             line = line.strip()
             if len(line) > 0:
@@ -329,6 +329,28 @@ def _readMultiCount(linelist, format = 'JASPAR'):
         for col in range(ncol):
             d = dict([(sym, symcount[sym][col]) for sym in symcount])
             distribs.append(Distrib(alpha, d))
+    elif format == 'JASPAR':
+        alpha_str = 'ACGT'
+        alpha = Alphabet(alpha_str)
+        cnt = 0
+        for sym in alpha_str:
+            line = linelist[cnt].strip()
+            counts = []
+            for txt in re.findall(r'\w+', line):
+                try:
+                    y = float(txt)
+                    counts.append(y)
+                except ValueError:
+                    pass # ignore non-numeric entries
+            if len(counts) != ncol and ncol != 0:
+                raise RuntimeError('Invalid row in file: ' + line)
+            ncol = len(counts)
+            symcount[sym] = counts
+            cnt += 1
+        distribs = []
+        for col in range(ncol):
+            d = dict([(sym, symcount[sym][col]) for sym in symcount])
+            distribs.append(Distrib(alpha, d))
     else:
         raise RuntimeError('Unsupported format: ' + format)
     return distribs
@@ -338,11 +360,11 @@ def readMultiCounts(filename, format = 'JASPAR'):
         for (possibly) multiple (named) entries.
         filename: name of file
         format: format of file, default is 'JASPAR' exemplified below
-        >MA001.1
-        A  [1423  708 2782    0 4000   27 3887 3550  799 1432 1487 ]
-        C  [ 560 1633   31    0    0   29    0    4  681  897  829 ]
-        G  [1242 1235   10 4000    0  109    6  383 2296 1360 1099 ]
-        T  [ 775  424 1177    0    0 3835  107   63  224  311  585 ]
+        >MA0001.1 SEP4
+        0    3    79    40    66    48    65    11    65    0
+        94    75    4    3    1    2    5    2    3    3
+        1    0    3    4    1    0    5    3    28    88
+        2    19    11    50    29    47    22    81    1    6
         returns a dictionary of Distrib's, key:ed by entry name (e.g. MA001.1)
     """
     fh = open(filename)
@@ -368,10 +390,10 @@ def readMultiCount(filename, format = 'JASPAR'):
     """ Read a file of raw counts for multiple distributions over the same set of symbols. 
         filename: name of file
         format: format of file, default is 'JASPAR' exemplified below
-        A  [1423  708 2782    0 4000   27 3887 3550  799 1432 1487 ]
-        C  [ 560 1633   31    0    0   29    0    4  681  897  829 ]
-        G  [1242 1235   10 4000    0  109    6  383 2296 1360 1099 ]
-        T  [ 775  424 1177    0    0 3835  107   63  224  311  585 ]
+        0    3    79    40    66    48    65    11    65    0
+        94    75    4    3    1    2    5    2    3    3
+        1    0    3    4    1    0    5    3    28    88
+        2    19    11    50    29    47    22    81    1    6
         returns a list of Distrib's
     """
     d = readMultiCounts(filename, format=format)
