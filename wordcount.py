@@ -73,7 +73,7 @@ def getReverse(distribs):
     return [d.swapxcopy('A','T').swapxcopy('C','G') for d in distribs[::-1]] # backwards
 
 
-def scanMotifReport(seqs, motif, threshold=0, jaspar = '../BIOL3014/prac_5/JASPAR_matrices.txt'):
+def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
     """ Produce a plot for a scan of the specified motif. 
         The plot has as its x-axis position of sequence, and 
         the y-axis the cumulative, non-negative PWM score over all sequences. """
@@ -152,7 +152,7 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = '../BIOL3014/prac_5/JASPA
     plt.show()
 
 
-def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = '../BIOL3014/prac_5/JASPAR_matrices.txt', seed=0):
+def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices.txt', seed=0):
     """ Produce a plot for a scan of the specified motif. 
         The plot has as its x-axis position of sequence, and 
         the y-axis the number of sequences with a best hit at position x. 
