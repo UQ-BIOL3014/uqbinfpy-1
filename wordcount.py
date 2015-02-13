@@ -61,7 +61,7 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
         try: cnt_neg = int(neg[word])
         except KeyError: cnt_neg = 0 
         # Compute p-value using Fisher's Exact test
-        pval = stats.getFETpval(cnt_pos, cnt_neg, len(seq)-cnt_pos, len(seq)-cnt_neg, False)
+        pval = stats.getFETpval(cnt_pos, cnt_neg, len(seqs) * (PeakWidth - WordWidth + 1) - cnt_pos, len(seqs) * (len(seq) - (PeakMargin * 2 + PeakWidth) - (WordWidth - 1) * 2) - cnt_neg, False)
         # Correct for multiple testing (very conservatively)
         eval = pval * len(allpos)
         print "%s\t%6.3f  \t%e" % (word, lgr, eval)
