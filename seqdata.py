@@ -258,6 +258,9 @@ class BedFile():
             "Peaks", e.g.
                 chr1    569780    569930    .    0    .    19    6.07811    -1    -1
                 chr1    713300    713450    .    0    .    54    49.1167    -1    -1
+            "Strand", e.g.
+                chr4    185772359    185772424    -    
+                chr18    20513381    20513401    +    
             "Summit", e.g.
                 # d = 130
                 chr      start    end   length summit  tags -10*log10(pvalue)    fold_enrichment    FDR(%)
@@ -308,6 +311,10 @@ class BedFile():
                         entry.addOption(name = words[3], score = float(words[4]), strand = words[5])
                     else:
                         entry.addOption(name = '.', score = int(words[3]), strand = '.')
+                elif format.lower().startswith('strand'):
+                    self.format = 'Strand'
+                    if len(words) >= 4: # properly formatted
+                        entry.addOption(strand = words[3])
                 elif format.lower().startswith('peak'):
                     self.format = 'Peaks'
                     if len(words) >= 10: # narrowpeaks
