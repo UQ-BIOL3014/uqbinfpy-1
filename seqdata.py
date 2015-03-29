@@ -119,7 +119,9 @@ class BedEntry():
                   bg = None):
         if name: self.name = name
         if score: self.score = score
-        if strand: self.strand = strand
+        if strand: 
+            self.strand = strand
+            self.usestrand = True # use reverse complement when sequence is requested from genome
         if thickStart: self.thickStart = thickStart
         if thickEnd: self.thickEnd = thickEnd
         if itemRgb: self.itemRgb = [int(color) for color in itemRgb.split(',')]
@@ -157,25 +159,55 @@ class BedEntry():
     def __len__(self):
         return self.blockCount
 
-    def loc(self, genome = None, fixedwidth = None, usesummit = False):
+    def loc(self, genome = None, fixedwidth = None, usesummit = False, useshift = None):
         """ Retrieve the genomic location for BED entry, or sequence if genome is provided
             genome: a dictionary with keys for sequence names, e.g. 'chr1', 'chrX', etc, and values with indexed/sliceable strings
             fixedwidth: the width of the location/sequence if the width in the BED entry is ignored, and only its centre is used
             usesummit: centre a fixedwidth window around an assigned "summit" 
+            useshift: centre a fixedwidth window around a shifted centre point, e.g. useshift=-125 will shiftcentre point 125bp upstream, 
+            to say capture a fixedwidth=350bp window with 350/2-125=50bp downstream
         """
-        if fixedwidth:
+        otherstrand = False
+        if (self.usestrand):
+            if (self.strand == '-'):
+                otherstrand = True
+
+        if (otherstrand == False): 
+            end = self.chromEnd
+            start = self.chromStart
+            mywidth = fixedwidth or (self.chromEnd - self.chromStart)
+            mycentre = start + (self.chromEnd - self.chromStart) / 2
             if usesummit:
-                diff = self.summit - fixedwidth / 2
-            else:
-                diff = (self.chromEnd - self.chromStart) / 2 - fixedwidth / 2
-            if genome:
-                return genome[self.chrom][max(0, self.chromStart + diff) : min(len(genome[self.chrom]), self.chromStart + diff + fixedwidth)]
-            else:
-                return (self.chrom, self.chromStart + diff, self.chromStart + diff + fixedwidth)
-        if genome:
-            return genome[self.chrom][self.chromStart:self.chromEnd]
+                mycentre = self.summit
+            if useshift:
+                mycentre = mycentre + useshift
+            if fixedwidth: # we need to re-calculate start and end
+                if genome:
+                    end = min(len(genome[self.chrom]), mycentre + (mywidth / 2))
+                else:
+                    end = mycentre + (mywidth / 2)
+                start = max(0, mycentre - (mywidth / 2))
+                
+        else: # other strand                
+            start = self.chromEnd 
+            end = self.chromStart
+            mywidth = fixedwidth or (self.chromEnd - self.chromStart)
+            mycentre = self.chromStart + (self.chromEnd - self.chromStart) / 2
+            if usesummit:
+                mycentre = self.summit
+            if useshift:
+                mycentre = mycentre - useshift # shift is reversed on other strand
+            if fixedwidth: # we need to re-calculate start and end
+                end = max(0, mycentre - (mywidth / 2))
+                if genome:
+                    start = min(len(genome[self.chrom]), mycentre + (mywidth / 2))
+                else:
+                    start = mycentre + (mywidth / 2)
+                
+        if genome: # refer to the genome sequence
+            return genome[self.chrom][start : end]
         else:
-            return (self.chrom, self.chromStart, self.chromEnd)
+            return (self.chrom, start, end)
 
     def setwidth(self, fixedwidth = None, usesummit = False):
         if fixedwidth:
@@ -281,6 +313,7 @@ class BedFile():
         self.rows = []
         self.format = 'Limited'
         self.indices = None
+        self.usestrand = False # auto-use strand information to identify RC sequence from location
         for line in f:
             row += 1
             words = line.strip().split()
@@ -315,6 +348,8 @@ class BedFile():
                     self.format = 'Strand'
                     if len(words) >= 4: # properly formatted
                         entry.addOption(strand = words[3])
+                    if len(words) >= 5:
+                        entry.addOption(name = words[4])
                 elif format.lower().startswith('peak'):
                     self.format = 'Peaks'
                     if len(words) >= 10: # narrowpeaks
@@ -879,8 +914,13 @@ class TwoBitSequence(object):
         if min_ < 0:
             if max_ < -dna_size: raise IndexError('index out of range')
             min_ = dna_size + 1 + min_
-        # make sure there's a proper range
-        if min_ > max_ and max_ is not None: return ''
+        # Find out if the reverse complement is sought
+        reverse = False # assume not RC
+        if min_ > max_ and max_ is not None: 
+            reverse = True
+            mymax = max_
+            max_ = min_
+            min_ = mymax
         if max_ == 0: return ''
         # load all the data
         if max_ > dna_size: max_ = dna_size
@@ -948,8 +988,19 @@ class TwoBitSequence(object):
             string_as_array[start:end] = array('c', lower(string_as_array[start:end].tostring()))
         if not len(string_as_array) == max_ - min_:
             raise RuntimeError, "Sequence was longer than it should be"
+        if reverse:
+            return self.reverseComplement(string_as_array.tostring())           
         return string_as_array.tostring()
 
+    def reverseComplement(self, dna):
+        """ Return a new sequence: the reverse complement of this sequence. """
+        newseq=''
+        symbols={'A':'T','C':'G','T':'A','G':'C','a':'t','c':'g','t':'a','g':'c','n':'n','N':'N'} # reverse complement dictionary
+        for symbol in dna[::-1]:
+            newsymbol=symbols[symbol] # uses the reverse complement symbols in dictionary
+            newseq+=newsymbol
+        return newseq  # returns RC sequences
+            
     def __str__(self):
         """
         returns the entire chromosome
