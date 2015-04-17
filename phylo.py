@@ -84,7 +84,9 @@ class PhyloTree:
             return None
     
     def parsimony(self):
-        """ Solve the simple parsimony problem, i.e. find the sequences on each of the internal nodes. """
+        """ Solve the "small parsimony problem", 
+            i.e. find the sequences on each of the internal nodes. 
+            See Jones and Pevzner, p. 368 and onwards, for details. """
         self.root._forwardParsimony(self.aln)  # setup and compute scores for all nodes
         self.root._backwardParsimony(self.aln) # use scores to determine sequences
         return self.root.getSequence() # return the sequence found at the root

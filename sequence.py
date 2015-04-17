@@ -170,12 +170,14 @@ class Sequence(object):
 Below are some useful methods for loading data from strings and files.
 Recognize the FASTA format (nothing fancy). 
 """
-def readFasta(string, alphabet = None, ignore = False):
+def readFasta(string, alphabet = None, ignore = False, gappy = False):
     """ Read the given string as FASTA formatted data and return the list of
         sequences contained within it. 
         If alphabet is specified, use it, if None (default) then guess it.
         If ignore is False, errors cause the method to fail.
-        If ignore is True, errors will disregard sequence."""
+        If ignore is True, errors will disregard sequence.
+        If gappy is False (default), sequence cannot contain gaps, 
+        if True gaps are accepted and included in the resulting sequences."""
     seqlist = []    # list of sequences contained in the string 
     seqname = None  # name of *current* sequence 
     seqinfo = None
@@ -186,7 +188,7 @@ def readFasta(string, alphabet = None, ignore = False):
         if line[0] == '>':  # start of new sequence            
             if seqname:     # check if we've got one current
                 try:
-                    current = Sequence(seqdata, alphabet, seqname, seqinfo)
+                    current = Sequence(seqdata, alphabet, seqname, seqinfo, gappy)
                     seqlist.append(current)
                 except RuntimeError as errmsg:
                     if not ignore:
@@ -208,7 +210,7 @@ def readFasta(string, alphabet = None, ignore = False):
     # we're done reading the file, but the last sequence remains
     if seqname:
         try:
-            lastseq = Sequence(seqdata, alphabet, seqname, seqinfo)
+            lastseq = Sequence(seqdata, alphabet, seqname, seqinfo, gappy)
             seqlist.append(lastseq)
         except RuntimeError as errmsg:
             if not ignore:
@@ -233,12 +235,14 @@ def parseDefline(string):
     elif re.match("refseq\|\S+\|\S+", s):                   arg = s.split('|');  return (arg[1], arg[2], arg[0], '')
     else: return (s, '', '', '')
 
-def readFastaFile(filename, alphabet = None, ignore = False):
+def readFastaFile(filename, alphabet = None, ignore = False, gappy = False):
     """ Read the given FASTA formatted file and return the list of sequences 
         contained within it. Note that if alphabet is NOT specified, it will take a 
         separate guess for each sequence. 
         If ignore is False, errors cause the method to fail.
-        If ignore is True, errors will disregard sequence."""
+        If ignore is True, errors will disregard sequence.
+        If gappy is False (default), sequence cannot contain gaps, 
+        if True gaps are accepted and included in the resulting sequences."""
     fh = open(filename)
     seqlist = []
     batch = '' # a batch of rows including one or more complete FASTA entries
@@ -247,7 +251,7 @@ def readFastaFile(filename, alphabet = None, ignore = False):
         row = row.strip()
         if len(row) > 0:
             if row.startswith('>') and rowcnt > 0:
-                more = readFasta(batch, alphabet, ignore)
+                more = readFasta(batch, alphabet, ignore, gappy)
                 if len(more) > 0:
                     seqlist.extend(more)
                 batch = ''
@@ -255,7 +259,7 @@ def readFastaFile(filename, alphabet = None, ignore = False):
             batch += row + '\n'
             rowcnt += 1
     if len(batch) > 0:
-        more = readFasta(batch, alphabet, ignore)
+        more = readFasta(batch, alphabet, ignore, gappy)
         if len(more) > 0:
             seqlist.extend(more)
     fh.close()
