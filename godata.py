@@ -8,6 +8,8 @@ It can be used on files you can download from geneontology.org.
 The class GO is constructed from:
 - annotation file which is (usually) specific to the species of interest
 - OBO file which defines the GO terms and their relationships
+  e.g.
+  > go = GO('gene_association.goa_ref_human', 'go-basic.obo')
 Internal data structures are created so that you can query
 - what are the terms of my gene (or genes)? Use getTerms
 - what are the genes of my term? Use getGenes
@@ -77,8 +79,9 @@ class GO():
     
     # Structures to hold all data relevant to session
     annots = {}     # annotations: annots[gene] = (taxa, terms[term] = (evid, T/F))
-    termdefs = {}   # definitions: termdefs[term] = (onto, terms[term] = relation, name)
-      
+    termdefs = {}   # definitions: termdefs[term] = (onto, set((term, rel)), name)
+    children = {}   # redundant, parent-to-child structure: children[term] = set((term, rel))
+    
     def __init__(self, annotFile, obofile, annotfile_columns = (1,2,3,4,6,8)):
         """ Start GO session with specified data loaded:
         annotfile: name of annotation file, e.g.'gene_association.tair'
@@ -95,6 +98,16 @@ class GO():
         for term in terms:
             (term_name, term_onto, term_is) = terms[term]
             self.termdefs[term] = (term_onto, term_is, term_name)
+            self.children[term] = set()
+
+        for term in self.termdefs:            
+            (term_onto, term_is, term_name) = self.termdefs[term]
+            for (parent, prel) in term_is: 
+                try:
+                    cset = self.children[parent]
+                    cset.add((term, prel))
+                except KeyError:
+                    pass
         print "Read %d GO definitions" % len(terms)
         # open annotation file to analyse and index data 
         src = open(annotFile, 'r')
@@ -162,7 +175,7 @@ class GO():
                 if (evid == None or evid == term_evid) and term_qual:
                     direct.add(term)
         except KeyError:
-            return # gene was not found, hence no annotations for it
+            return set() # gene was not found, hence no annotations for it
         # STEP 2: Find terms associated with (indirect) parents of terms from STEP 1
         indirect = set()
         if include_more_general: 
@@ -199,15 +212,13 @@ class GO():
             qualified by evidence, taxa and relation type, e.g. "is_a".
             With a single term provided, a set of genes is returned.
         """
-        genes = set()
+        genes = self._getGenes4Term(term, evid, taxa, rel)
         if include_more_specific:
-            terms = self.getChildren(term, rel, False) # not recursive yet
+            terms = self.getChildren(term, rel, True) # not recursive yet
             for t in terms:
                 tgenes = self._getGenes4Term(t, evid, taxa, rel)
                 for g in tgenes:
                     genes.add(g)
-        else:
-            genes = self._getGenes4Term(term, evid, taxa, rel)
         return genes
     
     def _getGenes4Term(self, term, evid = None, taxa = None, rel = None):
@@ -228,19 +239,20 @@ class GO():
 
     def getChildren(self, parent_term_id_or_ids, rel = None, include_more_specific = False):
         """ Retrieve all direct children of the given (parent) term.
-            Currently, this does not find children of children recursively. 
         """
-        if include_more_specific:
-            raise "Not yet implemented"
         parent_terms = self._makeIntoList(parent_term_id_or_ids)
-        children = set()
-        for term in self.termdefs: # definitions: termdefs[term] = (onto, terms[term] = relation, name)
-            (qonto, qterms, qname) = self.termdefs[term]
-            for qparent in qterms:
-                qrel = qterms[qparent]
-                if qparent in parent_terms and (rel == None or rel == qrel):
-                    children.add(term)
-        return children
+        cset = set()
+        for parent in parent_terms: 
+            # definitions: children[term] = set((term, relation), ...)
+            current = self.children[parent]
+            for (child_term, child_rel) in current:
+                if rel == None or rel == child_rel:
+                    cset.add(child_term)
+        if len(cset) > 0 and include_more_specific:
+            grandkids = self.getChildren(cset, rel, True)
+            for grandkid in grandkids:
+                cset.add(grandkid)
+        return cset
 
     def getParents(self, child_term_id, include_more_general = True):
         """ Retrieve all parents of the given term, transitively or not.
@@ -264,60 +276,121 @@ class GO():
             ontology, parent terms, and name as a tuple.
         """
         try:
-            (onto_ch, terms_dict, term_name) = self.termdefs[term_id]
-            return (onto_ch, terms_dict, term_name)
+            (onto_ch, terms_set, term_name) = self.termdefs[term_id]
+            return (onto_ch, terms_set, term_name)
         except KeyError:
             return ('Unknown', 'Unknown', 'Unknown')
     
-    def getGOReport(self, positives, background = None, taxa = None, include_more_general = True):
-        """ Generate a complete GO term report for a set of genes (positives).
-            Each GO term is also assigned an enrichment p-value (on basis of background, if provided).
-            Returns a list of tuples (GO_Term_ID[str], Foreground_no[int], Term_description[str]) with no background, OR
-            (GO_Term_ID[str], E-value[float], Foreground_no[int], Background_no[int], Term_description[str]). 
-            E-value is a Bonferroni-corrected p-value.
+    def getAllAnnots(self):
+        """ Retrieve all annotated gene products """
+        return self.annots.keys()
+    
+    def getAllBackground(self, positives = [], taxa = None, evid = None, include_more_general = False):
+        """ Retrieve all genes and terms that are annotated but not in a list of positives (gene products).
+        """
+        # (taxa, terms[term] = (evid, T/F))
+        bg_genes = set()
+        bg_list = []
+        for gene in self.annots:
+            if not gene in positives:
+                bg_genes.add(gene)
+                (qtaxa, qterms) = self.annots[gene]
+                if taxa == None or qtaxa == taxa:
+                    for t in qterms:
+                        (qevid, qqual) = qterms[t]
+                        if (evid == None or qevid == evid) and qqual: 
+                            bg_list.append(t)
+                            if include_more_general:
+                                for parent in self.getParents(t, True):
+                                    bg_list.append(parent)
+        return (bg_genes, bg_list)
+    
+    def getCountReport(self, positives, threshold = None, include_more_general = True):
+        """ For a set of named gene products (positives) this method determines the counts of GO terms.
+            Returns a list of tuples (GO_Term_ID[str], Foreground_no[int], Term_description[str]) sorted by count.
+            positives: names of gene products
+            threshold: the count that must be reached for term to be reported (default is 0)
+            If evid(ence) is specified the method returns only entries with that specific evidence code (see header of file for codes).
+            include_more_general: if True, include also more general GO terms annotated to gene products (default is True)
             """
         fg_list = [] # all terms, with multiple copies for counting
         fg_map = self.getTerms4Genes(positives, include_more_general = include_more_general) #
         for id in fg_map:
             for t in fg_map[id]:
                 fg_list.append(t)
-        bg_map = {}
-        bg_list = []
-        negatives = set()
-        if background != None:
-            negatives = set(background).difference(set(positives))
-            bg_map = self.getTerms4Genes(negatives, include_more_general = include_more_general)
-            for id in bg_map:
-                for t in bg_map[id]:
-                    bg_list.append(t)
         term_set = set(fg_list)
         term_cnt = {}
 
         nPos = len(positives)
-        nNeg = len(negatives)
-        if background == None:
-            for t in term_set:
-                term_cnt[t] = fg_list.count(t)
-            sorted_cnt = sorted(term_cnt.items(), key=lambda v: v[1], reverse=True)
-        else: # a background is provided
-            for t in term_set:
-                fg_hit = fg_list.count(t)
-                bg_hit = bg_list.count(t)
-                fg_nohit = nPos - fg_hit
-                bg_nohit = nNeg - bg_hit
-                term_cnt[t] = (fg_hit, fg_hit + bg_hit, stats.getFETpval(fg_hit, bg_hit, fg_nohit, bg_nohit, False))
-            sorted_cnt = sorted(term_cnt.items(), key=lambda v: v[1][2], reverse=False)
-
+        if threshold == None:
+            threshold = 0 # include all terms 
+        for t in term_set:
+            cnt = fg_list.count(t)
+            if cnt >= threshold:
+                term_cnt[t] = cnt
+        sorted_cnt = sorted(term_cnt.items(), key=lambda v: v[1], reverse=True)
         ret = []
         for t in sorted_cnt:
             defin = self.getTermdef(t[0])
             if defin == None:
                 print 'Could not find definition of %s' % t[0]
             else:
-                if background != None:
-                    ret.append((t[0], t[1][2] * len(term_set), t[1][0], t[1][0]+t[1][1], defin[2], defin[0]))
-                else:
-                    ret.append((t[0], t[1], defin[2], defin[0]))
+                ret.append((t[0], t[1], defin[2], defin[0]))
+        return ret
+    
+    def getEnrichmentReport(self, positives, background = None, evid = None, threshold = None, include_more_general = True):
+        """ For a set of named gene products (positives) this method determines the enrichment of GO terms.
+            Each GO term is also assigned an enrichment p-value (on basis of provided background, or on basis of all annotated genes, if not provided).
+            Note that to use the full set as background can be computationally expensive, so to speed up subsequent runs, the results are cached.
+            Returns a list of tuples (GO_Term_ID[str], E-value[float], Foreground_no[int], Background_no[int], Term_description[str]). 
+            E-value is a Bonferroni-corrected p-value.
+            positives: names of gene products
+            background: names of gene products (or None if all annotated gene products should be used; default)
+            threshold: E-value that must be reached for term to be reported (default is 0.05)
+            If evid(ence) is specified the method returns only entries with that specific evidence code (see header of file for codes).
+            include_more_general: if True, include also more general GO terms annotated to gene products (default is True)
+            """
+        # Process foreground: find terms of genes
+        fg_list = [] # all terms, with multiple copies for counting
+        fg_map = self.getTerms4Genes(positives, evid = evid, include_more_general = include_more_general) #
+        for fg_gene in fg_map:
+            for t in fg_map[fg_gene]:
+                fg_list.append(t)
+        nPos = len(positives)
+        # Process background: find terms of genes
+        bg_list = []
+        if background == None: # need to use the full set
+            background = self.annots.keys()
+        negatives = set(background).difference(set(positives)) # remove the positives from the background to create genuine negatives
+        nNeg = len(negatives)
+        bg_map = self.getTerms4Genes(negatives, evid = evid, include_more_general = include_more_general)
+        for bg_gene in bg_map:
+            for t in bg_map[bg_gene]:
+                bg_list.append(t)
+
+        term_set = set(fg_list)
+        term_cnt = {}
+
+        if threshold == None:
+            threshold = 0.05
+
+        for t in term_set:
+            fg_hit = fg_list.count(t) # number of foreground genes WITH GO term (number of terms in the list for the collective set of foreground genes)
+            bg_hit = bg_list.count(t) # number of background genes WITH GO term (number of terms in the list for the collective set of background genes)
+            fg_nohit = nPos - fg_hit  # total number of genes in foreground minus that number of hits 
+            bg_nohit = nNeg - bg_hit  # total number of genes in background minus that number of hits
+            pvalue = stats.getFETpval(fg_hit, bg_hit, fg_nohit, bg_nohit, False) # one-tailed FET
+            evalue = pvalue * len(term_set) # Bonferroni correction
+            if evalue <= threshold: # check if significance req is fulfilled
+                term_cnt[t] = (fg_hit, fg_hit + bg_hit, evalue)
+        sorted_cnt = sorted(term_cnt.items(), key=lambda v: v[1][2], reverse=False)
+        ret = []
+        for t in sorted_cnt:
+            defin = self.getTermdef(t[0])
+            if defin == None:
+                print 'Could not find definition of %s' % t[0]
+            else:
+                ret.append((t[0], t[1][2], t[1][0], t[1][1], defin[2], defin[0]))
         return ret
 
 class BinGO():
@@ -683,7 +756,7 @@ class BinGO():
                 print 'Could not find definition of %s' % t[0]
             else:
                 if background != None:
-                    ret.append((t[0], t[1][2] * len(term_set), t[1][0], t[1][0]+t[1][1], defin[2], defin[0]))
+                    ret.append((t[0], t[1][2] * len(term_set), t[1][0], t[1][1], defin[2], defin[0]))
                 else:
                     ret.append((t[0], t[1], defin[2], defin[0]))
         return ret
@@ -965,9 +1038,9 @@ def writeBitFile(annotFile, obofile, destFile, taxas = None):
     print "Completed at", time.asctime()
 
 if __name__ == '__main__0':
-    writeBitFile('/Users/mikael/simhome/TNR/GO/gene_association.tair', 
-                 '/Users/mikael/simhome/TNR/GO/gene_ontology_ext.obo',
-                 '/Users/mikael/simhome/TNR/GO/tair.bit')
+    writeBitFile('/Users/mikael/simhome/share/gene_association.tair', 
+                 '/Users/mikael/simhome/share/gene_ontology_ext.obo',
+                 '/Users/mikael/simhome/share/tair.bit')
     """
     Started at Tue Jul 17 09:24:25 2012
     Read annotations for 14973326 genes
@@ -996,7 +1069,7 @@ if __name__ == '__main__1':
     Wrote 35980 GO definitions, now at @775623250
     Completed at Tue Jul 17 10:59:05 2012
     """
-    bgo = BinGO('/Users/mikael/simhome/gene_association.bit')
+    bgo = BinGO('/Users/mikael/simhome/share/goa.bit')
     #bgo = BinGO('/Users/mikael/simhome/gene_association.bit', taxa = 39947)
     print "Done loading index with %d genes annotated" % len(bgo.annot_index)
     #pos = [id.strip() for id in open('/Users/mikael/simhome/nls/identifiers_streptophyta_pos.txt')]
@@ -1025,10 +1098,10 @@ if __name__ == '__main__1':
             print "%s\t%3d\t%s (%s)" % (row[0], row[1], row[2].strip(), row[3])
 
 if __name__ == '__main__':
-    go = GO('/Users/mikael/simhome/TNR/GO/gene_association.tair', '/Users/mikael/simhome/TNR/GO/gene_ontology_ext.obo', (9,2,3,4,6,8))
-    ts = go.getTerms4Genes(['AT4G15810', 'AT1G08720'])
-    print len(ts), "genes for this list:", ts
-    rep = go.getGOReport(['AT4G15810', 'AT1G08720'], ['AT5G42410', 'AT5G43700'], include_more_general = True)
-    for row in rep:
-        print row
-    
+    go = GO('/Users/mikael/simhome/share/gene_association.goa_ref_human', '/Users/mikael/simhome/share/go-basic.obo')
+    myproteins = ['Q9H9L7', 'P41223', 'Q13352', 'Q9UFW8', 'P23528', 'P21291', 'P50461', 'P60981', 'P07992', 'P51858', 'Q0VD86', 'P61244', 'O60682', 'Q01658', 'Q9HAN9', 'P06748', 'P52945', 'Q6MZT1', 'P61571', 'Q8NHV9', 'Q96EU6', 'Q14493', 'Q9NS25', 'Q8IZU3', 'Q9P016', 'Q96B42', 'O60688']
+    mybackground = go.getGenes4Term('GO:0005634', include_more_specific = True)
+    print len(mybackground)
+    report = go.getEnrichmentReport(myproteins, mybackground, threshold = 0.05, include_more_general = True)
+    for row in report:
+        print row    
