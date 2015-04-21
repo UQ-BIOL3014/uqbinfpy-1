@@ -28,7 +28,7 @@ from webservice import *
 from symbol import *
 from prob import *
 
-# Sequence ------------------
+# Sequence ------------------****
 
 class Sequence(object):
     """ A biological sequence. Stores the sequence itself (as a compact array), 
