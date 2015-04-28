@@ -125,7 +125,7 @@ class PhyloNode:
             left = str(self.left) 
         if self.right:
             right = str(self.right)
-        if self.dist:
+        if self.dist or self.dist == 0.0:
             dist = ':' + str(self.dist)
         if self.label != None:
             label = str(self.label)
@@ -496,7 +496,7 @@ if __name__ == '__main__1':
     print tree.root
     print tree.strSequences(10, 15)
     
-if __name__ == '__main__': 
+if __name__ == '__main__2': 
     from sequence import *
     tree = readNewick('/Users/mikael/Desktop/boost_tree.nwk')
     aln = readClustalFile('/Users/mikael/Desktop/interaction.aln', Bool_Alphabet)
@@ -505,9 +505,9 @@ if __name__ == '__main__':
     print tree.root
     print tree.strSequences()
     
-if __name__ == '__main__2': 
+if __name__ == '__main__': 
     from sequence import *
-    aln = readClustalFile('/Users/mikael/workspace/binf2014/data/ws2/p450_tidy.aln', Protein_Alphabet)
+    aln = readClustalFile('/Users/mikael/workspace/binfpy/BINF6000/ws2/MalS.clustal', Protein_Alphabet)
     tree = runUPGMA(aln, 'fractional')
     print tree.root
 
@@ -517,7 +517,8 @@ if __name__ == '__main__1':
     b = Sequence('AAA',name='b')
     c = Sequence('TCC',name='c')
     d = Sequence('TTC',name='d')
-    aln = Alignment([a,b,c,d])
+    e = Sequence('AAA',name='e')
+    aln = Alignment([a,b,c,d,e])
     D = aln.calcDistances('fractional')
     tree = runUPGMA(aln,'fractional')
     tree.putAlignment(aln)
