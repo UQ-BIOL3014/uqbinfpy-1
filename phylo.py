@@ -100,7 +100,7 @@ class PhyloNode:
         A number of methods are named with a _ prefix. These can be, but 
         are not intended to be used from outside the class. """
         
-    def __init__(self, label = None):
+    def __init__(self, label = ''):
         """ Initialise an initially unlinked node. 
             Populate fields left and right to link it with other nodes.
             Set label to name it. 
@@ -505,13 +505,13 @@ if __name__ == '__main__2':
     print tree.root
     print tree.strSequences()
     
-if __name__ == '__main__': 
+if __name__ == '__main__1': 
     from sequence import *
     aln = readClustalFile('/Users/mikael/workspace/binfpy/BINF6000/ws2/MalS.clustal', Protein_Alphabet)
     tree = runUPGMA(aln, 'fractional')
     print tree.root
 
-if __name__ == '__main__1':
+if __name__ == '__main__':
     from sequence import *
     a = Sequence('ACG',name='a')
     b = Sequence('AAA',name='b')
