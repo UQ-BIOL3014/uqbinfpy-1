@@ -96,6 +96,7 @@ class BedEntry():
         self.chromStart = chromStart
         self.chromEnd = chromEnd
         self.blockCount = None
+        self.usestrand = False
         
     def addOption(self, 
                   name = None, 
@@ -342,6 +343,10 @@ class BedFile():
                         entry.addOption(name = words[3], score = float(words[4]), strand = words[5], thickStart = int(words[6]), thickEnd = int(words[7]), itemRgb = words[8])
                     elif len(words) >= 6:
                         entry.addOption(name = words[3], score = float(words[4]), strand = words[5])
+                    elif len(words) >= 5:
+                        entry.addOption(name = words[3], score = float(words[4]))
+                    elif len(words) >= 4:
+                        entry.addOption(name = words[3])
                     else:
                         entry.addOption(name = '.', score = int(words[3]), strand = '.')
                 elif format.lower().startswith('strand'):

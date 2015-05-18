@@ -203,6 +203,17 @@ class Distrib():
                 maxprob = self[sym]
         return maxsym
     
+    def getsort(self):
+        """ Return the list of symbols, in order of their probability. """
+        symlist = [sym for (sym, _) in self.getProbsort()]
+        return symlist
+
+    def getProbsort(self):
+        """ Return the list of symbol-probability pairs, in order of their probability. """
+        s = [(sym, self.prob(sym)) for sym in self.alpha]
+        ss = sorted(s, key=lambda y: y[1], reverse=True)
+        return ss
+    
     def divergence(self, distrib2):
         """ Calculate the Kullback-Leibler divergence between two discrete distributions. 
             Note that when self.prob(x) is 0, the divergence for x is 0.
@@ -229,7 +240,7 @@ class Distrib():
                 p = 0.0001
             sum +=  p * math.log(p, base)
         return -sum
-         
+        
 def writeDistribs(distribs, filename):
     """ Write a list/set of distributions to a single file. """
     str = ''
@@ -542,7 +553,7 @@ class IndepJoint(Joint):
         """ Re-set the counts of each distribution. Pseudo-counts are re-applied. """
         self.store = [Distrib(alpha, self.pseudo) for alpha in self.alphas]
 
-    def observe(self, key, cnt = 1):
+    def observe(self, key, cnt = 1, countGaps = True):
         """ Make an observation of a tuple/key
         key: tuple that is being observed
         cnt: number/weight of observation (default is 1)
@@ -550,6 +561,8 @@ class IndepJoint(Joint):
         assert len(key) == len(self.store), "Number of symbols must agree with the number of positions"
         for i in range(len(self.store)):
             subkey = key[i]
+            if subkey == '-' and countGaps == False:
+                continue
             if subkey == '*' or subkey == '-':
                 for sym in self.alphas[i]:
                     score = self.store[i][sym]

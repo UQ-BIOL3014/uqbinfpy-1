@@ -104,7 +104,7 @@ class Sequence(object):
     
     def __iter__(self):
         """ Defines how a Sequence should be "iterated", i.e. what its elements are, e.g.
-        >>> seq = new Sequence('AGGAT', DNA_Alphabet)
+        >>> seq = Sequence('AGGAT', DNA_Alphabet)
         >>> for sym in seq:
                 print sym
         will print A, G, G, A, T (each on a separate row)
@@ -392,14 +392,49 @@ class Alignment():
             return
         return string
     
-    def getProfile(self, pseudo = 0.0):
+    def getProfile(self, pseudo = 0.0, countGaps = True):
         """ Determine the probability matrix from the alignment, assuming
         that each position is independent of all others. """
         p = IndepJoint([self.alphabet for _ in range(self.alignlen)], pseudo)
         for seq in self.seqs:
-            p.observe(seq)
+            p.observe(seq, 1, countGaps = countGaps)
         return p 
         
+    def getConsensus(self):
+        """ Construct a consensus sequence. """
+        syms = []
+        for col in range(self.alignlen):
+            d = Distrib(self.alphabet)
+            for seq in self.seqs:
+                if seq[col] in self.alphabet:
+                    d.observe(seq[col])
+            syms.append(d.getmax())
+        return Sequence(syms)
+    
+    def displayConsensus(self, theta1 = 0.2, theta2 = 0.05):
+        """ Display a table with rows for each alignment column, showing
+            column index, entropy, number of gaps, and symbols in order of decreasing probability.
+            theta1 is the threshold for displaying symbols in upper case,
+            theta2 is the threshold for showing symbols at all, and in lower case. """
+        print "Alignment of %d sequences, with %d columns" % (len(self.seqs), self.alignlen)
+        print "Column\tEntropy\tGaps\tSymbols (Up>=%.2f;Low>=%.2f)" % (theta1, theta2) 
+        for col in range(self.alignlen):
+            d = Distrib(self.alphabet)
+            gaps = 0
+            for seq in self.seqs:
+                if seq[col] in self.alphabet:
+                    d.observe(seq[col])
+                else:
+                    gaps += 1
+            print col, "\t%5.3f" % d.entropy(), "\t%4d\t" % gaps, 
+            symprobs = d.getProbsort()
+            for (sym, prob) in symprobs:
+                if prob >= theta1:
+                    print sym,
+                elif prob >= theta2:
+                    print sym.lower(),
+            print
+            
     def calcBackground(self):
         """ Count the proportion of each amino acid's occurrence in the
             alignment, and return as a probability distribution. """
@@ -1132,3 +1167,7 @@ def runBLAST(sequence, program='blastp', database='uniprotkb', exp='1e-1'):
         if len(id) > 0:
             ids.append(id.split(':')[1])
     return ids
+
+if __name__ == '__main__':
+    aln = readClustalFile('/Users/mikael/simhome/ASR/dp16_example.aln', Protein_Alphabet)
+    aln.displayConsensus(theta1 = 0.1, theta2 = 0.01)

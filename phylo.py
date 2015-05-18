@@ -197,7 +197,7 @@ class PhyloNode:
             self.right._assignAlignment(aln)
         for seq in aln.seqs:
             if seq.name == self.label:
-                self.sequence = seq.sequence
+                self.sequence = seq
                 break
         
     def _forwardParsimony(self, aln):
