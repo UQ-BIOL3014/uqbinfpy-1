@@ -426,7 +426,7 @@ class Alignment():
                     d.observe(seq[col])
                 else:
                     gaps += 1
-            print col, "\t%5.3f" % d.entropy(), "\t%4d\t" % gaps, 
+            print (col + 1), "\t%5.3f" % d.entropy(), "\t%4d\t" % gaps, 
             symprobs = d.getProbsort()
             for (sym, prob) in symprobs:
                 if prob >= theta1:
