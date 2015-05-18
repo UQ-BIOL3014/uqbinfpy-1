@@ -231,13 +231,16 @@ class Distrib():
         return sum
 
     def entropy(self):
-        """ Calculate the information (Shannon) entropy of the distribution. """
+        """ Calculate the information (Shannon) entropy of the distribution. 
+            Note that the base is the size of the alphabet, so maximum entropy is by definition 1. 
+            Also note that if the probability is exactly zero, it is replaced by a small value to 
+            avoid numerical issues with the logarithm. """
         sum = 0.0
         base = len(self.alpha)
         for sym in self.alpha:
             p = self.__getitem__(sym)
             if p == 0:
-                p = 0.0001
+                p = 0.000001
             sum +=  p * math.log(p, base)
         return -sum
         
@@ -625,12 +628,12 @@ class IndepJoint(Joint):
 
     def displayMatrix(self, count = False):
         """ Pretty-print matrix """
-        print " \t%s" % (' '.join("%5d" % (i + 1) for i in range(len(self.alphas))))
+        print " \t%s" % (''.join("\t%5d" % (i + 1) for i in range(len(self.alphas))))
         for a in self.alphas[0]:
             if count:
-                print "%s\t%s" % (a, ' '.join("%5d" % (y) for y in self.getRow(a, True)))
+                print "%s\t%s" % (a, ''.join("\t%5d" % (y) for y in self.getRow(a, True)))
             else:
-                print "%s\t%s" % (a, ' '.join("%5.3f" % (y) for y in self.getRow(a)))
+                print "%s\t%s" % (a, ''.join("\t%5.3f" % (y) for y in self.getRow(a)))
 
     def __str__(self):
         """ Text representation of the table. Note that size is an issue so big tables
