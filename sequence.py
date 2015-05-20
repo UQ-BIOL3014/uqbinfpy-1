@@ -411,7 +411,7 @@ class Alignment():
             syms.append(d.getmax())
         return Sequence(syms)
     
-    def displayConsensus(self, theta1 = 0.2, theta2 = 0.05):
+    def displayConsensus(self, theta1 = 0.2, theta2 = 0.05, lowercase = True):
         """ Display a table with rows for each alignment column, showing
             column index, entropy, number of gaps, and symbols in order of decreasing probability.
             theta1 is the threshold for displaying symbols in upper case,
@@ -428,11 +428,18 @@ class Alignment():
                     gaps += 1
             print (col + 1), "\t%5.3f" % d.entropy(), "\t%4d\t" % gaps, 
             symprobs = d.getProbsort()
+            (_, maxprob) = symprobs[0]
+            if maxprob >= theta1:
+                print "%d\tTRUE\t" % int(maxprob * 100),
+            else:
+                print "%d\t\t" % int(maxprob * 100),
             for (sym, prob) in symprobs:
                 if prob >= theta1:
-                    print sym,
+                    print sym, "%d%%" % int(prob * 100),
+                elif prob >= theta2 and lowercase:
+                    print sym.lower(), "%d%%" % int(prob * 100),
                 elif prob >= theta2:
-                    print sym.lower(),
+                    print sym, "%d%%" % int(prob * 100),
             print
             
     def calcBackground(self):
