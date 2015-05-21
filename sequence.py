@@ -442,6 +442,39 @@ class Alignment():
                     print sym, "%d%%" % int(prob * 100),
             print
             
+    def saveConsensus(self, filename, theta1 = 0.2, theta2 = 0.05, lowercase = True):
+        """ Display a table with rows for each alignment column, showing
+            column index, entropy, number of gaps, and symbols in order of decreasing probability.
+            theta1 is the threshold for displaying symbols in upper case,
+            theta2 is the threshold for showing symbols at all, and in lower case. """
+        f = open(filename, 'w')
+        f.write("Alignment of %d sequences, with %d columns\n" % (len(self.seqs), self.alignlen))
+        f.write("Column\tEntropy\tGaps\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+        for col in range(self.alignlen):
+            d = Distrib(self.alphabet)
+            gaps = 0
+            for seq in self.seqs:
+                if seq[col] in self.alphabet:
+                    d.observe(seq[col])
+                else:
+                    gaps += 1
+            f.write("%d\t%5.3f\t%4d\t" % ((col + 1), d.entropy(), gaps)) 
+            symprobs = d.getProbsort()
+            (_, maxprob) = symprobs[0]
+            if maxprob >= theta1:
+                f.write("%d\tTRUE\t" % int(maxprob * 100))
+            else:
+                f.write("%d\t\t" % int(maxprob * 100))
+            for (sym, prob) in symprobs:
+                if prob >= theta1:
+                    f.write("%c %d%% " % (sym, int(prob * 100)))
+                elif prob >= theta2 and lowercase:
+                    f.write("%c %d%% " % (sym.lower(), int(prob * 100)))
+                elif prob >= theta2:
+                    f.write("%c %d%% " % (sym, int(prob * 100)))
+            f.write('\n')
+        f.close()
+            
     def calcBackground(self):
         """ Count the proportion of each amino acid's occurrence in the
             alignment, and return as a probability distribution. """
