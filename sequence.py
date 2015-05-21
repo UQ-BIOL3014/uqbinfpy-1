@@ -447,6 +447,7 @@ class Alignment():
             column index, entropy, number of gaps, and symbols in order of decreasing probability.
             theta1 is the threshold for displaying symbols in upper case,
             theta2 is the threshold for showing symbols at all, and in lower case. """
+        filename = ''.join(e for e in filename if e.isalnum() or e == '_')
         f = open(filename, 'w')
         f.write("Alignment of %d sequences, with %d columns\n" % (len(self.seqs), self.alignlen))
         f.write("Column\tEntropy\tGaps\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
