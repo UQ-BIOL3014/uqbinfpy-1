@@ -449,7 +449,7 @@ class Alignment():
             theta2 is the threshold for showing symbols at all, and in lower case. """
         f = open(filename, 'w')
         f.write("Alignment of %d sequences, with %d columns\n" % (len(self.seqs), self.alignlen))
-        f.write("Column\tEntropy\tGaps\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+        f.write("Column\tEntropy\tGaps\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
         for col in range(self.alignlen):
             d = Distrib(self.alphabet)
             gaps = 0
