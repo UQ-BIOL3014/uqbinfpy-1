@@ -442,7 +442,7 @@ class Alignment():
                     print sym, "%d%%" % int(prob * 100),
             print
             
-    def saveConsensus(self, filename, theta1 = 0.2, theta2 = 0.05, lowercase = True):
+    def saveConsensus(self, filename, theta1 = 0.2, theta2 = 0.05, lowercase = True, compact = False):
         """ Display a table with rows for each alignment column, showing
             column index, entropy, number of gaps, and symbols in order of decreasing probability.
             theta1 is the threshold for displaying symbols in upper case,
@@ -450,7 +450,10 @@ class Alignment():
         filename = ''.join(e for e in filename if e.isalnum() or e == '_' or e == '.')
         f = open(filename, 'w')
         f.write("Alignment of %d sequences, with %d columns\n" % (len(self.seqs), self.alignlen))
-        f.write("Column\tEntropy\tGaps\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+        if compact:
+            f.write("Column\tConserv\tVariab\tAll (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+        else:
+            f.write("Column\tEntropy\tGaps\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
         for col in range(self.alignlen):
             d = Distrib(self.alphabet)
             gaps = 0
@@ -459,13 +462,27 @@ class Alignment():
                     d.observe(seq[col])
                 else:
                     gaps += 1
-            f.write("%d\t%5.3f\t%4d\t" % ((col + 1), d.entropy(), gaps)) 
+            f.write("%d\t" % (col + 1)) 
+            if not compact:
+                f.write("%5.3f\t%4d\t" % (d.entropy(), gaps)) 
             symprobs = d.getProbsort()
-            (_, maxprob) = symprobs[0]
-            if maxprob >= theta1:
-                f.write("%d\tTRUE\t" % int(maxprob * 100))
+            (maxsym, maxprob) = symprobs[0]
+            if compact:
+                if maxprob >= theta1:
+                    f.write("%c\t" % maxsym)
+                else:
+                    f.write("\t")
+                    for (sym, prob) in symprobs:
+                        if prob >= theta2 and lowercase:
+                            f.write("%c" % sym.lower())
+                        elif prob >= theta2:
+                            f.write("%c" % sym)
+                f.write("\t")
             else:
-                f.write("%d\t\t" % int(maxprob * 100))
+                if maxprob >= theta1:
+                    f.write("%d\t" % int(maxprob * 100))
+                else:
+                    f.write("%d\t\t" % int(maxprob * 100))
             for (sym, prob) in symprobs:
                 if prob >= theta1:
                     f.write("%c %d%% " % (sym, int(prob * 100)))
