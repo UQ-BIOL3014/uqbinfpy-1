@@ -442,7 +442,7 @@ class Alignment():
                     print sym, "%d%%" % int(prob * 100),
             print
             
-    def saveConsensus(self, filename, theta1 = 0.2, theta2 = 0.05, lowercase = True, compact = False):
+    def saveConsensus(self, myseq, filename, theta1 = 0.2, theta2 = 0.05, lowercase = True, compact = False):
         """ Display a table with rows for each alignment column, showing
             column index, entropy, number of gaps, and symbols in order of decreasing probability.
             theta1 is the threshold for displaying symbols in upper case,
@@ -453,18 +453,21 @@ class Alignment():
         if compact:
             f.write("Column\tConserv\tVariab\tAll (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
         else:
-            f.write("Column\tEntropy\tGaps\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+            f.write("Column\tEntropy\tProb\tConserv\tSymbols (Up>=%.2f;Low>=%.2f)\n" % (theta1, theta2))
+        countrow = 0
         for col in range(self.alignlen):
-            d = Distrib(self.alphabet)
-            gaps = 0
+            countrow += 1
+            if myseq[col] == '-':
+                continue
+            alist = list(self.alphabet)
+            alist.append('-')
+            d = Distrib(Alphabet(alist))
             for seq in self.seqs:
                 if seq[col] in self.alphabet:
                     d.observe(seq[col])
-                else:
-                    gaps += 1
             f.write("%d\t" % (col + 1)) 
             if not compact:
-                f.write("%5.3f\t%4d\t" % (d.entropy(), gaps)) 
+                f.write("%5.3f\t" % d.entropy()) 
             symprobs = d.getProbsort()
             (maxsym, maxprob) = symprobs[0]
             if compact:
