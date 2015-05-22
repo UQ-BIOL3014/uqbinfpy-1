@@ -461,21 +461,26 @@ class Alignment():
                 continue
             alist = list(self.alphabet)
             alist.append('-')
-            d = Distrib(Alphabet(alist))
+            gapalphabet = Alphabet(alist)
+            d_gap = Distrib(gapalphabet)
+            d_nogap = Distrib(self.alphabet)
             for seq in self.seqs:
+                if seq[col] in gapalphabet:
+                    d_gap.observe(seq[col])
                 if seq[col] in self.alphabet:
-                    d.observe(seq[col])
+                    d_nogap.observe(seq[col])
             f.write("%d\t" % (col + 1)) 
             if not compact:
                 f.write("%5.3f\t" % d.entropy()) 
-            symprobs = d.getProbsort()
-            (maxsym, maxprob) = symprobs[0]
+            symprobs_nogap = d_nogap.getProbsort()
+            symprobs_gap = d_gap.getProbsort()
+            (maxsym, maxprob) = symprobs_nogap[0]
             if compact:
                 if maxprob >= theta1:
                     f.write("%c\t" % maxsym)
                 else:
                     f.write("\t")
-                    for (sym, prob) in symprobs:
+                    for (sym, prob) in symprobs_gap:
                         if prob >= theta2 and lowercase:
                             f.write("%c" % sym.lower())
                         elif prob >= theta2:
@@ -486,7 +491,7 @@ class Alignment():
                     f.write("%d\t" % int(maxprob * 100))
                 else:
                     f.write("%d\t\t" % int(maxprob * 100))
-            for (sym, prob) in symprobs:
+            for (sym, prob) in symprobs_gap:
                 if prob >= theta1:
                     f.write("%c %d%% " % (sym, int(prob * 100)))
                 elif prob >= theta2 and lowercase:
