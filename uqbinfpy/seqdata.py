@@ -35,7 +35,7 @@ Examples:
 
 def overlap(chromLoc1, chromLoc2):
     """ Check if chromosome locations described by tuples
-        (chrom, chromStart, chromEnd) overlap. 
+        (chrom, chromStart, chromEnd) overlap.
         If so return the number of positions that overlap.
         Return 0 in case of NO overlap.
     """
@@ -62,7 +62,7 @@ def distance(chromLoc1, chromLoc2, minimum = True):
         If chromLoc1 is BEFORE chromLoc2 then the distance is positive, else negative.
         If not on same chromosome return None.
         minimum: if True (default), then use minimum distance, if False, use centre to centre
-    """ 
+    """
     if chromLoc1[0] == chromLoc2[0]:
         halfWidth1 = (chromLoc1[2] - chromLoc1[1]) / 2
         halfWidth2 = (chromLoc2[2] - chromLoc2[1]) / 2
@@ -88,25 +88,25 @@ def distance(chromLoc1, chromLoc2, minimum = True):
                 return -loc1_is_2nd
     else:
         return None
-    
+
 class BedEntry():
-    
+
     def __init__(self, chrom, chromStart, chromEnd):
         self.chrom = chrom
         self.chromStart = chromStart
         self.chromEnd = chromEnd
         self.blockCount = None
         self.usestrand = False
-        
-    def addOption(self, 
-                  name = None, 
-                  score = None, 
-                  strand = None, 
-                  thickStart = None, 
-                  thickEnd = None, 
-                  itemRgb = None, 
-                  blockCount = None, 
-                  blockSizes = None, 
+
+    def addOption(self,
+                  name = None,
+                  score = None,
+                  strand = None,
+                  thickStart = None,
+                  thickEnd = None,
+                  itemRgb = None,
+                  blockCount = None,
+                  blockSizes = None,
                   blockStarts = None,
                   signalValue = None,
                   pValue = None,
@@ -120,19 +120,19 @@ class BedEntry():
                   bg = None):
         if name: self.name = name
         if score: self.score = score
-        if strand: 
+        if strand:
             self.strand = strand
             self.usestrand = True # use reverse complement when sequence is requested from genome
         if thickStart: self.thickStart = thickStart
         if thickEnd: self.thickEnd = thickEnd
         if itemRgb: self.itemRgb = [int(color) for color in itemRgb.split(',')]
-        if blockCount: 
+        if blockCount:
             self.blockCount = max(0, blockCount)
-            if blockCount > 0: 
+            if blockCount > 0:
                 self.blockSizes = [int(sizeword) for sizeword in blockSizes.split(',')]
                 self.blockStarts = [int(startword) for startword in blockStarts.split(',')]
                 if len(self.blockSizes) != blockCount or len(self.blockStarts) != blockCount:
-                    raise RuntimeError('Blockcount is incorrect in BED entry \"%s\"' % str(self)) 
+                    raise RuntimeError('Blockcount is incorrect in BED entry \"%s\"' % str(self))
         if signalValue: self.signalValue = signalValue
         if pValue: self.pValue = pValue
         if qValue: self.qValue = qValue
@@ -143,13 +143,13 @@ class BedEntry():
         if fdr: self.fdr = fdr
         if bg: self.bg = bg
         if zscore: self.zscore = zscore
-        
+
     def __str__(self):
         return str((self.chrom, self.chromStart, self.chromEnd))
-    
+
     def __getitem__(self, i):
         if self.blockCount:
-            return (self.chrom, self.blockStarts[i], self.blockStarts[i] + self.blockSizes[i]) 
+            return (self.chrom, self.blockStarts[i], self.blockStarts[i] + self.blockSizes[i])
 
     def __iter__(self):
         if self.blockCount:
@@ -164,8 +164,8 @@ class BedEntry():
         """ Retrieve the genomic location for BED entry, or sequence if genome is provided
             genome: a dictionary with keys for sequence names, e.g. 'chr1', 'chrX', etc, and values with indexed/sliceable strings
             fixedwidth: the width of the location/sequence if the width in the BED entry is ignored, and only its centre is used
-            usesummit: centre a fixedwidth window around an assigned "summit" 
-            useshift: centre a fixedwidth window around a shifted centre point, e.g. useshift=-125 will shiftcentre point 125bp upstream, 
+            usesummit: centre a fixedwidth window around an assigned "summit"
+            useshift: centre a fixedwidth window around a shifted centre point, e.g. useshift=-125 will shiftcentre point 125bp upstream,
             to say capture a fixedwidth=350bp window with 350/2-125=50bp downstream
         """
         otherstrand = False
@@ -173,7 +173,7 @@ class BedEntry():
             if (self.strand == '-'):
                 otherstrand = True
 
-        if (otherstrand == False): 
+        if (otherstrand == False):
             end = self.chromEnd
             start = self.chromStart
             mywidth = fixedwidth or (self.chromEnd - self.chromStart)
@@ -188,9 +188,9 @@ class BedEntry():
                 else:
                     end = mycentre + (mywidth / 2)
                 start = max(0, mycentre - (mywidth / 2))
-                
-        else: # other strand                
-            start = self.chromEnd 
+
+        else: # other strand
+            start = self.chromEnd
             end = self.chromStart
             mywidth = fixedwidth or (self.chromEnd - self.chromStart)
             mycentre = self.chromStart + (self.chromEnd - self.chromStart) / 2
@@ -204,7 +204,7 @@ class BedEntry():
                     start = min(len(genome[self.chrom]), mycentre + (mywidth / 2))
                 else:
                     start = mycentre + (mywidth / 2)
-                
+
         if genome: # refer to the genome sequence
             return genome[self.chrom][start : end]
         else:
@@ -232,10 +232,10 @@ class BedFile():
         chromEnd - The ending position of the feature in the chromosome or scaffold. The chromEnd base is not included in the display of the feature. For example, the first 100 bases of a chromosome are defined as chromStart=0, chromEnd=100, and span the bases numbered 0-99.
 
         The 9 additional optional BED fields are (part of sub-format "Optional"):
-        
+
         name - Defines the name of the BED line. This label is displayed to the left of the BED line in the Genome Browser window when the track is open to full display mode or directly to the left of the item in pack mode.
         score - A score between 0 and 1000. If the track line useScore attribute is set to 1 for this annotation data set, the score value will determine the level of gray in which this feature is displayed (higher numbers = darker gray). This table shows the Genome Browser's translation of BED score values into shades of gray:
-        shade                                             
+        shade
         strand - Defines the strand - either '+' or '-'.
         thickStart - The starting position at which the feature is drawn thickly (for example, the start codon in gene displays).
         thickEnd - The ending position at which the feature is drawn thickly (for example, the stop codon in gene displays).
@@ -245,40 +245,40 @@ class BedFile():
         blockStarts - A comma-separated list of block starts. All of the blockStart positions should be calculated relative to chromStart. The number of items in this list should correspond to blockCount.
 
         ENCODE also defines broadpeaks and narrowpeaks format (part of our "Peaks" sub-format):
-        
+
         name - Defines the name of the BED line. This label is displayed to the left of the BED line in the Genome Browser window when the track is open to full display mode or directly to the left of the item in pack mode.
         score - Indicates how dark the peak will be displayed in the browser (0-1000). If all scores were '0' when the data were submitted to the DCC, the DCC assigned scores 1-1000 based on signal value. Ideally the average signalValue per base spread is between 100-1000.
         strand - +/- to denote strand or orientation (whenever applicable). Use '.' if no orientation is assigned.
         signalValue - Measurement of overall (usually, average) enrichment for the region.
         pValue - Measurement of statistical significance (-log10). Use -1 if no pValue is assigned.
         qValue - Measurement of statistical significance using false discovery rate (-log10). Use -1 if no qValue is assigned.
-        peak - Point-source called for this peak; 0-based offset from chromStart. Use -1 if no point-source called.      
-        
+        peak - Point-source called for this peak; 0-based offset from chromStart. Use -1 if no point-source called.
+
         MACS also defines a "summit" peaks format (part of our "Summit" sub-format)
         It contains the peak summits locations for every peaks. The 5th column in this file is the .
         In addition to the required three, the following fields follow:
         length         [redundant, ignored]
         summit         summit height of fragment pileup
         tags
-        pValue         [-10*log10(pvalue)]    
-        fold           [enrichment]  
+        pValue         [-10*log10(pvalue)]
+        fold           [enrichment]
         FDR            [%; optional]
 
-        "CCAT" BED-like file format: 
-        chromosome, 
-        peakcenter    [converted to summit], 
-        regionstart, 
-        regionend, 
-        tags          [tagcount], 
-        bg            [bgcount], 
-        zscore, 
+        "CCAT" BED-like file format:
+        chromosome,
+        peakcenter    [converted to summit],
+        regionstart,
+        regionend,
+        tags          [tagcount],
+        bg            [bgcount],
+        zscore,
         fdr
-        
+
     """
-    
+
     def __init__(self, filename, format = 'Limited'):
         """ Read a BED file.
-            format: specifies the format of the file, 
+            format: specifies the format of the file,
             "Limited", e.g.
                 chr22 1000 5000
                 chr22 2000 6000
@@ -292,8 +292,8 @@ class BedFile():
                 chr1    569780    569930    .    0    .    19    6.07811    -1    -1
                 chr1    713300    713450    .    0    .    54    49.1167    -1    -1
             "Strand", e.g.
-                chr4    185772359    185772424    -    
-                chr18    20513381    20513401    +    
+                chr4    185772359    185772424    -
+                chr18    20513381    20513401    +
             "Summit", e.g.
                 # d = 130
                 chr      start    end   length summit  tags -10*log10(pvalue)    fold_enrichment    FDR(%)
@@ -385,13 +385,13 @@ class BedFile():
 
     def __iter__(self):
         return self.rows.__iter__()
-    
+
     def __getslice__(self, i, j):
         return self.rows.__getslice__(i, j)
-    
+
     def __getitem__(self, i):
         return self.rows[i]
-    
+
     def __len__(self):
         return len(self.rows)
 
@@ -415,7 +415,7 @@ class BedFile():
             index_centre[chr].sort()
             index_end[chr].sort()
         return (index_start, index_centre, index_end)
-        
+
     def __contains__(self, elem):
         """ Test for containment: does the specified elem overlap with at least one of the BED entries.
             The method performs a binary search. """
@@ -446,8 +446,8 @@ class BedFile():
             return False
 
     def match(self, elem, name):
-        """ Test for containment: does the specified elem overlap with at least one of the BED entries 
-            that has the nominated name (label).""" 
+        """ Test for containment: does the specified elem overlap with at least one of the BED entries
+            that has the nominated name (label)."""
         try:
             if isinstance(elem, BedEntry):
                 elem = elem.loc()
@@ -489,11 +489,11 @@ class BedFile():
                     return False
         except KeyError:
             return False
-        
+
     def closest(self, myloc, minimum = True):
         """ Find the closest entry in the current BedFile to a given location.
             Return a tuple with the absolute distance and the entry that is closest.
-            If several entries are closest, then any of the closest entries are returned. 
+            If several entries are closest, then any of the closest entries are returned.
             If no location is found on the same chromosome, the tuple None, None is returned.
             minimum: if True, use minimum distance, if False, use centre to centre distance.
         """
@@ -528,7 +528,7 @@ class BedFile():
                         delta = (inspect - lower + 1) / 2
                         inspect -= delta
                 # we may have missed the closest, so need to look around this point
-                for i_dn in range(inspect + 1, len(entries)): # Look downstream since   
+                for i_dn in range(inspect + 1, len(entries)): # Look downstream since
                     entry = self.rows[entries[i_dn][2]]
                     d = distance(entry.loc(), myloc, minimum = True)
                     if abs(d) < mindist:
@@ -559,7 +559,7 @@ class BedFile():
                         delta = (inspect - lower + 1) / 2
                         inspect -= delta
                 # we may have missed the closest, so need to look around this point
-                for i_up in range(inspect - 1, 0, -1): # Look upstream since   
+                for i_up in range(inspect - 1, 0, -1): # Look upstream since
                     entry = self.rows[entries[i_up][2]]
                     d = distance(entry.loc(), myloc, minimum = True)
                     if abs(d) < mindist:
@@ -612,7 +612,7 @@ class BedFile():
                 f.write("%s %d %d %s %d %s" % (row.chrom, row.chromStart, row.chromEnd, row.name, row.score, row.strand))
             f.write("\n")
         f.close()
-        
+
 def writeBedFile(entries, filename, format = 'BED6'):
     """ Save the BED entries to a BED file.
         format - the format to use for WRITING, currently only BED6 ('Optional' 6-col format) is supported.
@@ -628,11 +628,11 @@ def writeBedFile(entries, filename, format = 'BED6'):
         f.write("\n")
     f.close()
 
-        
+
 """
 This following code is a modified version of twobitreader (which is under Perl Artistic License 2.0).
-As per license restrictions, the code below indicates what has been modified in relation to the 
-standard version (retrieved from https://bitbucket.org/thesylex/twobitreader on the 16 May 2012). 
+As per license restrictions, the code below indicates what has been modified in relation to the
+standard version (retrieved from https://bitbucket.org/thesylex/twobitreader on the 16 May 2012).
 No warranty is provided, express or implied
 
 Modifications to package:
@@ -683,7 +683,7 @@ def bits_to_base(x):
 def base_to_bin(x):
     """
         provided for user convenience
-        convert a nucleotide to its bit representation 
+        convert a nucleotide to its bit representation
     """
     if x == 'T': return '00'
     if x == 'C': return '01'
@@ -748,12 +748,12 @@ class TwoBitFile(dict):
     """
         python-level reader for .2bit files (i.e., from UCSC genome browser)
         (note: no writing support)
-        
+
         TwoBitFile inherits from dict
         You may access sequences by name, e.g.
         >>> genome = TwoBitFile('hg18.2bit')
         >>> chr20 = genome['chr20']
-        
+
         Sequences are returned as TwoBitSequence objects
         You may access intervals by slicing or using str() to dump the entire entry
         e.g.
@@ -761,12 +761,12 @@ class TwoBitFile(dict):
         'ttttcctctaagataatttttgccttaaatactattttgttcaatactaagaagtaagataacttccttttgttggtat
         ttgcatgttaagtttttttcc'
         >>> whole_chr20 = str(chr20)
-        
+
         Fair warning: dumping the entire chromosome requires a lot of memory
-        
+
         See TwoBitSequence for more info
     """
-    
+
     def __init__(self, foo):
         super(TwoBitFile, self).__init__()
         if not exists(foo):
@@ -780,8 +780,8 @@ class TwoBitFile(dict):
         for name, offset in self._offset_dict.iteritems():
             self[name] = TwoBitSequence(self._file_handle, offset,
                                         self._byteswapped)
-        return        
-        
+        return
+
     def _load_header(self):
         file_handle = self._file_handle
         header = array(LONG)
@@ -797,13 +797,13 @@ class TwoBitFile(dict):
             if not signature2 == 0x1A412743:
                 raise TwoBitFileError('Signature in header should be 0x1A412743'
                                     + ', instead found 0x%X' % signature)
-        if not version == 0: 
+        if not version == 0:
             raise TwoBitFileError('File version in header should be 0.')
         if not reserved == 0:
             raise TwoBitFileError('Reserved field in header should be 0.')
         self._byteswapped = byteswapped
         self._sequence_count = sequence_count
-        
+
     def _load_index(self):
         file_handle = self._file_handle
         byteswapped = self._byteswapped
@@ -842,7 +842,7 @@ class TwoBitFile(dict):
 class TwoBitSequence(object):
     """
         A TwoBitSequence object refers to an entry in a TwoBitFile
-        
+
         You may access intervals by slicing or using str() to dump the entire entry
         e.g.
         >>> genome = TwoBitFile('hg18.2bit')
@@ -851,18 +851,18 @@ class TwoBitSequence(object):
         'ttttcctctaagataatttttgccttaaatactattttgttcaatactaagaagtaagataacttccttttgttggtat
         ttgcatgttaagtttttttcc'
         >>> whole_chr20 = str(chr20) # get whole chr as string
-        
+
         Fair warning: dumping the entire chromosome requires a lot of memory
-         
+
         Note that we follow python/UCSC conventions:
         Coordinates are 0-based, end-open
         (Note: The UCSC web-based genome browser uses 1-based closed coordinates)
         If you attempt to access a slice past the end of the sequence,
         it will be truncated at the end.
-        
+
         Your computer probably doesn't have enough memory to load a whole genome
         but if you want to string-ize your TwoBitFile, here's a recipe:
-        
+
         x = TwoBitFile('my.2bit')
         d = x.dict()
         for k,v in d.iteritems(): d[k] = str(v)
@@ -921,7 +921,7 @@ class TwoBitSequence(object):
             min_ = dna_size + 1 + min_
         # Find out if the reverse complement is sought
         reverse = False # assume not RC
-        if min_ > max_ and max_ is not None: 
+        if min_ > max_ and max_ is not None:
             reverse = True
             mymax = max_
             max_ = min_
@@ -938,10 +938,10 @@ class TwoBitSequence(object):
         offset = self._offset
         packed_dna_size = self._packed_dna_size
 
-        # region_size is how many bases the region is       
+        # region_size is how many bases the region is
         if max_ is None: region_size = dna_size - min_
         else: region_size = max_ - min_
-        
+
         # start_block, end_block are the first/last 32-bit blocks we need
         # note: end_block is not read
         # blocks start at 0
@@ -951,16 +951,16 @@ class TwoBitSequence(object):
         if end_block >= packed_dna_size: end_block = packed_dna_size - 1
         # +1 we still need to read block
         blocks_to_read = end_block - start_block + 1
-        
+
         # jump directly to desired file location
         local_offset = offset + start_block * 4
         file_handle.seek(local_offset)
-        
+
         # note we won't actually read the last base
         # this is a python slice first_base_offset:16*blocks+last_base_offset
         first_base_offset = min_ % 16
         last_base_offset = max_ % 16
-        
+
         fourbyte_dna = array(LONG)
         fourbyte_dna.fromfile(file_handle, blocks_to_read)
         if byteswapped: fourbyte_dna.byteswap()
@@ -971,7 +971,7 @@ class TwoBitSequence(object):
             if end <= min_: continue
             if start > max_: break
             if start < min_: start = min_
-            if end > max_: end = max_ 
+            if end > max_: end = max_
             start -= min_
             end -= min_
             string_as_array[start:end] = array('c', 'N'*(end-start))
@@ -987,14 +987,14 @@ class TwoBitSequence(object):
             if end <= min_: continue
             if start > max_: break
             if start < min_: start = min_
-            if end > max_: end = max_ 
+            if end > max_: end = max_
             start -= min_
             end -= min_
             string_as_array[start:end] = array('c', lower(string_as_array[start:end].tostring()))
         if not len(string_as_array) == max_ - min_:
             raise RuntimeError, "Sequence was longer than it should be"
         if reverse:
-            return self.reverseComplement(string_as_array.tostring())           
+            return self.reverseComplement(string_as_array.tostring())
         return string_as_array.tostring()
 
     def reverseComplement(self, dna):
@@ -1005,13 +1005,13 @@ class TwoBitSequence(object):
             newsymbol=symbols[symbol] # uses the reverse complement symbols in dictionary
             newseq+=newsymbol
         return newseq  # returns RC sequences
-            
+
     def __str__(self):
         """
         returns the entire chromosome
         """
         return self.__getslice__(0, None)
-    
+
 class TwoBitFileError(StandardError):
     """
     Base exception for TwoBit module
@@ -1027,14 +1027,14 @@ def print_specification():
     """
     return """
         From http://www.its.caltech.edu/~alok/reviews/blatSpecs.html
-        
+
         .2bit files
-        
+
         A .2bit file can store multiple DNA sequence (up to 4 gig total) in a compact \
         randomly accessible format. The two bit files contain masking information as \
         well as the DNA itself. The file begins with a 16 byte header containing the \
         following fields:
-        
+
         signature - the number 0x1A412743 in the architecture of the machine that \
         created the file.
         version - zero for now. Readers should abort if they see a version number \
@@ -1046,17 +1046,17 @@ def print_specification():
         version matches. If so all multiple-byte entities in the file will need to be \
         byte-swapped. This enables these binary files to be used unchanged on \
         different architectures.
-        
+
         The header is followed by a file index. There is one entry in the index for \
         each sequence. Each index entry contains three fields:
-        
+
         nameSize - a byte containing the length of the name field
         name - this contains the sequence name itself, and is variable length \
         depending on nameSize.
         offset - 32 bit offset of the sequence data relative to the start of the file
-        
+
         The index is followed by the sequence records. These contain 9 fields:
-        
+
         dnaSize - number of bases of DNA in the sequence.
         nBlockCount - the number of blocks of N's in the file (representing unknown \
         sequence).
@@ -1069,7 +1069,7 @@ def print_specification():
         11 - G. The first base is in the most significant 2 bits byte, and the last \
         base in the least significant 2 bits, so that the sequence TCAG would be \
         represented as 00011011. The packedDna field will be padded with 0 bits as \
-        
+
         necessary so that it takes an even multiple of 32 bit in the file, as this \
         improves i/o performance on some machines.
         .nib files

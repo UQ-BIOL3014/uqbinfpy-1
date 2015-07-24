@@ -9,37 +9,37 @@ class PhyloTree:
         Functionality includes labelling and traversing nodes; reading and writing to Newick format;
         association with sequence alignment; maximum parsimony inference of ancestral sequence;
         generation of single, bifurcating rooted tree by UPGMA.
-        Known issues: Binary only; Parsimony does not handle gaps in alignment. 
+        Known issues: Binary only; Parsimony does not handle gaps in alignment.
         Programmers should note that almost all functionality is implemented through recursion. """
-        
+
     def __init__(self, root):
         """ Create a tree from a node that is "root" in the tree."""
         self.root = root
-        
+
     def putAlignment(self, aln):
-        """ Associate the tree with a set of sequences/alignment. 
+        """ Associate the tree with a set of sequences/alignment.
             Involves assigning the sequence to the leaf nodes. """
         self.aln = aln
         self.root._assignAlignment(aln)
-            
+
     def __str__(self):
         """ Produce a printable representation of the tree, specifically the root of the tree. """
         return str(self.root)
 
     def strSequences(self, start = None, end = None):
-        """ Produce a sequence representation of the tree, specifically the root of the tree. 
+        """ Produce a sequence representation of the tree, specifically the root of the tree.
             Specify the start and end positions in the alignment for the sequence to be printed
             (if None the min and max positions will be used). """
         if self.aln != None:
             my_start = start or 0
-            my_end = end or aln.alignlen 
+            my_end = end or aln.alignlen
             return self.root._printSequences(my_start, my_end)
-    
+
     def findLabel(self, label):
-        """ Retrieve/return the node with the specified label. 
+        """ Retrieve/return the node with the specified label.
             Returns None if not found."""
         return self.root._findLabel(label)
-    
+
     def getDescendantsOf(self, node, transitive = False):
         """ Retrieve and return the (list of) descendants (children) of a specified node.
             Node can be the label or the instance.
@@ -52,9 +52,9 @@ class PhyloTree:
         if node:
             return node.getDescendants(transitive)
         return None
-    
+
     def getAncestorsOf(self, node, transitive = False):
-        """ Retrieve and return the ancestor (transitive=False) or 
+        """ Retrieve and return the ancestor (transitive=False) or
             ancestors (transitive=True) of a specified node.
             Node can be the label or the instance.
             If node does not exist, None is returned.
@@ -82,32 +82,32 @@ class PhyloTree:
             elif found and len(branching) > 0:
                 return branching[len(branching)-1]
             return None
-    
+
     def parsimony(self):
-        """ Solve the "small parsimony problem", 
-            i.e. find the sequences on each of the internal nodes. 
+        """ Solve the "small parsimony problem",
+            i.e. find the sequences on each of the internal nodes.
             See Jones and Pevzner, p. 368 and onwards, for details. """
         self.root._forwardParsimony(self.aln)  # setup and compute scores for all nodes
         self.root._backwardParsimony(self.aln) # use scores to determine sequences
         return self.root.getSequence() # return the sequence found at the root
 
-        
+
 class PhyloNode:
-    """ A class for a node in a rooted, binary (bifurcating) tree. 
-        Contains pointers to descendants/daughters (left and right), 
-        optional fields include data, label, sequence and dist. 
-        If parsimony is used scores and traceback pointers are available. 
-        A number of methods are named with a _ prefix. These can be, but 
+    """ A class for a node in a rooted, binary (bifurcating) tree.
+        Contains pointers to descendants/daughters (left and right),
+        optional fields include data, label, sequence and dist.
+        If parsimony is used scores and traceback pointers are available.
+        A number of methods are named with a _ prefix. These can be, but
         are not intended to be used from outside the class. """
-        
+
     def __init__(self, label = ''):
-        """ Initialise an initially unlinked node. 
+        """ Initialise an initially unlinked node.
             Populate fields left and right to link it with other nodes.
-            Set label to name it. 
+            Set label to name it.
             Use field data for any type of information associated with node.
-            Use dist to indicate the distance to its parent (if any). 
+            Use dist to indicate the distance to its parent (if any).
             Other fields are used internally, including sequence for associated alignment,
-            seqscores, backleft and backright for maximum parsimony. """ 
+            seqscores, backleft and backright for maximum parsimony. """
         self.left = None
         self.right = None
         self.data = None
@@ -117,12 +117,12 @@ class PhyloNode:
         self.seqscores = None # The scores propagated from leaves via children
         self.backleft = None # Pointers back to left child: what symbol rendered current/parent symbols
         self.backright = None # Pointers back to right child: what symbol rendered current/parent symbols
-        
+
     def __str__(self):
         """ Returns string with node (incl descendants) in a Newick style. """
         left = right = label = dist = ''
         if self.left:
-            left = str(self.left) 
+            left = str(self.left)
         if self.right:
             right = str(self.right)
         if self.dist or self.dist == 0.0:
@@ -140,12 +140,12 @@ class PhyloNode:
                 return left+','
             elif self.left and self.right:
                 return '(' + left + ',' + right + ')' + dist
-    
+
     def _printSequences(self, start, end):
         """ Returns string with node (incl descendants) in a Newick style. """
         left = right = label = dist = ''
         if self.left:
-            left = self.left._printSequences(start, end) 
+            left = self.left._printSequences(start, end)
         if self.right:
             right = self.right._printSequences(start, end)
         if self.dist:
@@ -163,7 +163,7 @@ class PhyloNode:
                 return left+','
             elif self.left and self.right:
                 return '(' + left + ',' + right + ')' + dist
-    
+
     def _findLabel(self, label):
         """ Find a node by label at this node or in any descendants (recursively). """
         if self.label == label:
@@ -176,17 +176,17 @@ class PhyloNode:
             if self.right:
                 return self.right._findLabel(label)
             return None
-    
+
     def _propagateDistance(self, parent_dist):
-        """ Convert absolute distances to relative. 
+        """ Convert absolute distances to relative.
             The only parameter is the absolute distance to the parent of this node. """
         travelled = self.dist               # absolute distance to this node
-        self.dist = parent_dist - self.dist # relative distance to this node 
+        self.dist = parent_dist - self.dist # relative distance to this node
         if self.left != None:               # if there is a child node...
-            self.left._propagateDistance(travelled) # pass absolute distance to this node 
+            self.left._propagateDistance(travelled) # pass absolute distance to this node
         if self.right != None:
             self.right._propagateDistance(travelled)
-    
+
     def _assignAlignment(self, aln):
         """ Assign an alignment to the node, which implies assigning a sequence to it if one is
             available in the alignment. """
@@ -199,10 +199,10 @@ class PhyloNode:
             if seq.name == self.label:
                 self.sequence = seq
                 break
-        
+
     def _forwardParsimony(self, aln):
         """ Internal function that operates recursively to first initialise each node (forward),
-            stopping only once a sequence has been assigned to the node, 
+            stopping only once a sequence has been assigned to the node,
             then to propagate scores from sequence assigned nodes to root (backward). """
         if self.sequence == None: # no sequence has been assigned
             if self.left == None and self.right == None:    # no children, so terminal, cannot propagate scores
@@ -242,9 +242,9 @@ class PhyloNode:
         else:
             self.seqscores = [[0 if a==sym else 999999 for a in aln.alphabet] for sym in self.sequence] # if we want to weight scores, this would need to change
         return self.seqscores
-    
+
     def _backwardParsimony(self, aln, seq = None):
-        """ Internal function that operates recursively to inspect scores to determine 
+        """ Internal function that operates recursively to inspect scores to determine
             most parsimonious sequence, from root to leaves. """
         if self.sequence == None: # no sequence has been assigned
             leftbuf = []
@@ -281,7 +281,7 @@ class PhyloNode:
             self.left._backwardParsimony(aln, sequence.Sequence(leftbuf, aln.alphabet, self.label, info = "Inferred by parsimony", gappy = True))
             self.right._backwardParsimony(aln, sequence.Sequence(rightbuf, aln.alphabet, self.label, info = "Inferred by parsimony", gappy = True))
         return self.sequence
-        
+
     def getSequence(self):
         """ Get the sequence for the node. Return None if no sequence is assigned.
             Requires that an alignment is associated with the tree, and that sequence names match node labels.
@@ -290,7 +290,7 @@ class PhyloNode:
             return self.sequence
         elif self.seqscores != None: # inferred by parsimony but not yet assigned
             return None # determine most parsimonous sequence, not yet implemented
-        
+
     def isAncestorOf(self, node, transitive = True):
         """ Decide if this node is the ancestor of specified node.
             If transitive is True (default), all descendants are included.
@@ -302,7 +302,7 @@ class PhyloNode:
                 statusLeft = self.left.isAncestorOf(node, transitive)
                 if statusLeft: return True
             if self.right:
-                return self.right.isAncestorOf(node, transitive) 
+                return self.right.isAncestorOf(node, transitive)
         else:
             return False
 
@@ -316,7 +316,7 @@ class PhyloNode:
         if self.right:
             children.append(self.right)
         if not transitive:
-            return children 
+            return children
         else:
             grandchildren = []
             for c in children:
@@ -327,41 +327,41 @@ class PhyloNode:
             return children
 
 """ ----------------------------------------------------------------------------------------
-    Methods for generating a single tree by clustering, here UPGMA Zvelebil and Baum p. 278  
+    Methods for generating a single tree by clustering, here UPGMA Zvelebil and Baum p. 278
     ----------------------------------------------------------------------------------------"""
 
 def runUPGMA(aln, measure, absoluteDistances = False):
     """ Generate an ultra-metric, bifurcating, rooted tree from an alignment based on pairwise distances.
-        Use specified distance metric (see sequence.calcDistances). 
-        If absoluteDistances is True, the tree will be assigned the total distance from provided species. 
+        Use specified distance metric (see sequence.calcDistances).
+        If absoluteDistances is True, the tree will be assigned the total distance from provided species.
         Otherwise, the relative addition at each path will be assigned."""
-    D = {} 
-    N = {} # The number of sequences in each node 
+    D = {}
+    N = {} # The number of sequences in each node
     M = aln.calcDistances(measure) # determine all pairwise distances
     nodes = [PhyloNode(seq.name) for seq in aln.seqs] # construct all leaf nodes
     """ For each node-pair, assign the distance between them. """
-    for i in range(len(nodes)): 
+    for i in range(len(nodes)):
         nodes[i].sequence = aln.seqs[i]
         nodes[i].dist = 0.0
         N[nodes[i]] = 1 # each cluster contains a single sequence
         for j in range(0, i):
             D[_getkey(nodes[i], nodes[j])] = M[i, j]
-    """ Now: treat each node as a cluster, 
-        until there is only one cluster left, 
+    """ Now: treat each node as a cluster,
+        until there is only one cluster left,
         find the *closest* pair of clusters, and
-        merge that pair into a new cluster (to replace the two that merged). 
+        merge that pair into a new cluster (to replace the two that merged).
         In each case, the new cluster is represented by the (phylo)node that is formed. """
     while len(N) > 1: # N will contain all "live" clusters, to be reduced to a signle below
         closest_pair = (None, None) # The two nodes that are closest to one another according to supplied metric
         closest_dist = None         # The distance between them
         for pair in D:              # check all pairs which should be merged
-            dist = D[pair]          
+            dist = D[pair]
             if dist < closest_dist or closest_dist == None:
                 closest_dist = dist
                 closest_pair = pair
         # So we know the closest, now we need to merge...
         x = closest_pair[0]         # See Zvelebil and Baum p. 278 for notation
-        y = closest_pair[1]         
+        y = closest_pair[1]
         z = PhyloNode()             # create a new node for the cluster z
         z.dist = D.pop(_getkey(x, y)) / 2.0 # assign the absolute distance, travelled so far, note: this will change to relative distance later
         Nx = N.pop(x)               # find number of sequences in x, remove the cluster from list N
@@ -371,19 +371,19 @@ def runUPGMA(aln, measure, absoluteDistances = False):
             # we will merge x and y into a new cluster z, so need to consider w (which is not x or y)
             dxw = D.pop(_getkey(x, w)) # retrieve and remove distance from D: x to w
             dyw = D.pop(_getkey(y, w)) # retrieve and remove distance from D: y to w
-            dz[w] = (Nx * dxw + Ny * dyw) / (Nx + Ny) # distance: z to w 
+            dz[w] = (Nx * dxw + Ny * dyw) / (Nx + Ny) # distance: z to w
         N[z] = Nx + Ny              # total number of sequences in new cluster, insert new cluster in list N
-        for w in dz:                # we have to run through the nodes again, now not including the removed x and y 
+        for w in dz:                # we have to run through the nodes again, now not including the removed x and y
             D[_getkey(z, w)] = dz[w]# for each "other" cluster, update distance per EQ8.16 (Z&B p. 278)
         z.left = x                  # link the phylogenetic tree
         z.right = y
-        nodes.append(z)             
+        nodes.append(z)
     if not absoluteDistances:
         x._propagateDistance(z.dist)    # convert absolute distances to relative by recursing down left path
         y._propagateDistance(z.dist)    # convert absolute distances to relative by recursing down right path
         z.dist = 0.0                    # root z is at distance 0 from merged x and y
     return PhyloTree(z)             # make it to tree, return
-            
+
 def _getkey(node1, node2):
     """ Construct canonical (unordered) key for two symbols """
     if node1 <= node2:
@@ -392,7 +392,7 @@ def _getkey(node1, node2):
         return tuple([node2, node1])
 
 """ ----------------------------------------------------------------------------------------
-    Methods for processing files of trees on the Newick format  
+    Methods for processing files of trees on the Newick format
     ----------------------------------------------------------------------------------------"""
 
 def _findComma(string, level = 0):
@@ -410,7 +410,7 @@ def _findComma(string, level = 0):
 def parseNewickNode(string):
     """ Utility function that recursively parses embedded string using Newick format. """
     first = string.find('(')
-    last = string[::-1].find(')') # look from the back 
+    last = string[::-1].find(')') # look from the back
     if first == -1 and last == -1: # we are at leaf
         y = string.split(':')
         node = PhyloNode(y[0])
@@ -440,7 +440,7 @@ def parseNewickNode(string):
 
 def parseNewick(string):
     """ Main method for parsing a Newick string into a (phylogenetic) tree.
-        Handles labels (on both leaves and internal nodes), and includes distances (if provided). 
+        Handles labels (on both leaves and internal nodes), and includes distances (if provided).
         Returns an instance of a PhyloTree. """
     if string.find(';') != -1:
         string = string[:string.find(';')]
@@ -454,19 +454,19 @@ def readNewick(filename):
     return parseNewick(string)
 
 """ ----------------------------------------------------------------------------------------
-    Example main functions for 
+    Example main functions for
     (0) reading and searching tree data
     (1) running maximum parsimony to recover ancient states
     (2) running UPGMA to generate tree from alignment using evolutionary model
     ----------------------------------------------------------------------------------------"""
 
-if __name__ == '__main__0': 
+if __name__ == '__main__0':
     tree = parseNewick('((A:0.6,((B:3.3,(C:1.0,D:2.5)cd:1.8)bcd:5,((E:3.9,F:4.5)ef:2.5,G:0.3)efg:7)X:3.2)Y:0.5,H:1.1)I:0.2')
     print tree
     node = tree.findLabel('B')
     print node.label, node.dist, node.left, node.right
     desc = tree.getDescendantsOf(node, transitive=False)
-    print 'Direct descendants of', node.label, 'are' 
+    print 'Direct descendants of', node.label, 'are'
     for d in desc:
         print '\t', d.label
     desc = tree.getDescendantsOf(node, transitive=True)
@@ -476,7 +476,7 @@ if __name__ == '__main__0':
     a = tree.getAncestorsOf(node, transitive=False)
     print 'Direct ancestor of', node.label, 'is', a.label
     anc = tree.getAncestorsOf(node, transitive=True)
-    print 'All ancestors of', node.label, 'are' 
+    print 'All ancestors of', node.label, 'are'
     for a in anc:
         print '\t', a.label
     from sequence import *
@@ -486,8 +486,8 @@ if __name__ == '__main__0':
         node = tree.findLabel(seq.name)
         a = tree.getAncestorsOf(node)
         print seq.name, 'has-distance', node.dist, 'from ancestor', a.label
-            
-if __name__ == '__main__1': 
+
+if __name__ == '__main__1':
     from sequence import *
     tree = readNewick('/Users/mikael/workspace/binf/data/cyp1a1.tree')
     aln = readClustalFile('/Users/mikael/workspace/binf/data/cyp1a1.aln', Protein_Alphabet)
@@ -495,8 +495,8 @@ if __name__ == '__main__1':
     tree.parsimony()
     print tree.root
     print tree.strSequences(10, 15)
-    
-if __name__ == '__main__2': 
+
+if __name__ == '__main__2':
     from sequence import *
     tree = readNewick('/Users/mikael/Desktop/boost_tree.nwk')
     aln = readClustalFile('/Users/mikael/Desktop/interaction.aln', Bool_Alphabet)
@@ -504,8 +504,8 @@ if __name__ == '__main__2':
     tree.parsimony()
     print tree.root
     print tree.strSequences()
-    
-if __name__ == '__main__1': 
+
+if __name__ == '__main__1':
     from sequence import *
     aln = readClustalFile('/Users/mikael/workspace/binfpy/BINF6000/ws2/MalS.clustal', Protein_Alphabet)
     tree = runUPGMA(aln, 'fractional')
@@ -525,4 +525,4 @@ if __name__ == '__main__':
     print tree
     tree.parsimony()
     print tree.root
-    print tree.strSequences(0, 3) 
+    print tree.strSequences(0, 3)

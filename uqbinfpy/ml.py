@@ -5,8 +5,8 @@ import random
 
 class NN():
     """
-    A basic implementation of a standard, multi-layer, feed-forward neural network 
-    and back-propagation learning. 
+    A basic implementation of a standard, multi-layer, feed-forward neural network
+    and back-propagation learning.
     """
     def __init__(self, nInput, nHidden, nOutput):
         """ Constructs a neural network and initializes its weights to small random values.
@@ -42,22 +42,22 @@ class NN():
         f.close()
 
     def _fLogistic(self, net):
-        """ The logistic output function. 
-            Computes the output value of a node given the summed incoming activation, 
+        """ The logistic output function.
+            Computes the output value of a node given the summed incoming activation,
             values bounded between 0 and 1.
             net: The summed incoming activation. """
         return 1.0 / (1.0 + numpy.exp(-net))
 
     def _fSoftmax(self, net):
-        """ The softmax output function. 
-            Computes the output value of a node given the summed incoming activation, 
+        """ The softmax output function.
+            Computes the output value of a node given the summed incoming activation,
             values bounded between 0 and 1, where all add to 1.0.
             net: The summed incoming activation for each output (must be the full layer). """
         tmp = numpy.exp(net)
         sum = numpy.sum(tmp)
-        out = tmp / sum 
+        out = tmp / sum
         return out
-    
+
     def _fprimeLogistic(self, y):
         """ The derivative of the logistic output function.
             y: The value by which the gradient is determined.
@@ -90,11 +90,11 @@ class NN():
             c_pred = maxIndex(output)
             cm[c_targ, c_pred] += 1
         return cm
-        
+
     def train(self, input, target, eta = 0.1, niter = 1, shuffle = True):
         """ Adapts weights in the network given the values that should appear at the output (target)
-            when the input has been presented. The procedure is known as error back-propagation. 
-            This implementation is "online" rather than "batched", that is, the change is not based 
+            when the input has been presented. The procedure is known as error back-propagation.
+            This implementation is "online" rather than "batched", that is, the change is not based
             on the gradient of the golbal error, merely the local, pattern-specific error.
             target:  The desired output values
             eta:     The learning rate, always between 0 and 1, typically a small value (default 0.1)
@@ -155,7 +155,7 @@ def readNNFile(filename):
         nn.b_out[i] = float(f.readline())
     f.close()
     return nn
-    
+
 def maxIndex(output):
     """ Figure out the index of the largest value in the specified array/list. """
     if len(output) > 1: # multi-class
@@ -184,7 +184,7 @@ def readDenseDataFile(filename):
     """ Read data from file for training a neural network.
         The file follows the "dense" row-format:
         <i1> <i2> ... <im> | <o1> ... <on>
-        where ix are m input values and ox are n output values """ 
+        where ix are m input values and ox are n output values """
     # first check format
     ninputs = None
     noutputs = None
@@ -224,7 +224,7 @@ if __name__ == '__main__0':
     nrows, noutputs = om.shape
     nn = NN(ninputs, 3, noutputs)
     for i in range(100):
-        print nn.train(im, om, 0.1, 100)    
+        print nn.train(im, om, 0.1, 100)
 
 def fGaussian(x, mu = 0.0, sigma2 = 1.0):
     """ Gaussian PDF for numpy arrays """
@@ -232,49 +232,49 @@ def fGaussian(x, mu = 0.0, sigma2 = 1.0):
     den = 2 * sigma2
     expon = numpy.exp(-num/den)
     return expon / numpy.sqrt(2.0 * numpy.pi * sigma2)
-    
+
 class KMeans():
     """
-    K-means clustering is a special case of Expectation-Maximization (EM). 
-    In K-means clustering we consider samples 
-        x1,...,xn labeled with z1,...,zN with xt vectors in R^D and zt \in {1,...,K}. 
-    In other words, zt is a class label, or cluster label, for the data point xt. 
-    We can define a K-means probability model as follows where N(mu, I) denotes the 
-    D-dimensional Gaussian distribution with mean mu \in R^D and with the 
+    K-means clustering is a special case of Expectation-Maximization (EM).
+    In K-means clustering we consider samples
+        x1,...,xn labeled with z1,...,zN with xt vectors in R^D and zt \in {1,...,K}.
+    In other words, zt is a class label, or cluster label, for the data point xt.
+    We can define a K-means probability model as follows where N(mu, I) denotes the
+    D-dimensional Gaussian distribution with mean mu \in R^D and with the
     identity covariance matrix.
         theta = <mu_1,...,mu_K>, mu_k \in R^D
         P(x1, . . . , xn, z1, . . . zn) = PROD P(zt) P(xt|zt) = PROD 1/K N(mu_zt, I) (xt)
     We now consider the optimization problem defined for this model. For
-    this model 
+    this model
         (mu_1,...,mu_K)* = argmin_mu min_z SUM || muzt - xt || ^2
-    The optimization problem defines K-means clustering (under quadratic distortion). 
-    This problem is non-convex and in fact is NP-hard. The K-means algorithm is coordinate 
-    descent applied to this objective and is equivalent to EM under the above probability 
-    model. The K-means clustering algorithm can be written as follows where we specify a 
+    The optimization problem defines K-means clustering (under quadratic distortion).
+    This problem is non-convex and in fact is NP-hard. The K-means algorithm is coordinate
+    descent applied to this objective and is equivalent to EM under the above probability
+    model. The K-means clustering algorithm can be written as follows where we specify a
     typical initialization step.
-        1. Initialize mu_z to be equal to a randomly selected point xt. 
+        1. Initialize mu_z to be equal to a randomly selected point xt.
         2. Repeat the following until (z1, . . . zn) stops changing.
-            (a) zt   := argmin_z || mu_z - xt || ^2 
+            (a) zt   := argmin_z || mu_z - xt || ^2
             (b) Nz   := |{t: zt = z}|
             (c) mu_z := 1 / Nz SUM_t:zt=z xt
-    In words, the K-means algorithm first assigns a class center mu_z for each class z. 
-    It then repeatedly classifies each point xt as belonging to the class whose center is 
-    nearest xt and then recomputes the class centers to be the mean of the point placed in that class. 
-    Because it is a coordinate descent algorithm, the sum of squares of the difference 
-    between each point and its class center is reduced by each update. This implies that the 
-    classification must eventually stabilize. 
+    In words, the K-means algorithm first assigns a class center mu_z for each class z.
+    It then repeatedly classifies each point xt as belonging to the class whose center is
+    nearest xt and then recomputes the class centers to be the mean of the point placed in that class.
+    Because it is a coordinate descent algorithm, the sum of squares of the difference
+    between each point and its class center is reduced by each update. This implies that the
+    classification must eventually stabilize.
     The procedure terminates when the class labels stop changing.
     """
     def __init__(self, data):
         """ Construct a K-means classifier using the provided data.
-            data: a two-dim numpy array, with one row corresponding to a data point. 
+            data: a two-dim numpy array, with one row corresponding to a data point.
             If training is not performed, the provided data is used as the "means". """
         assert len(data) > 0, "Data must be supplied"
         self.data  = data
         self.means = data.copy()
         self.samplelen = len(data[0])
-        self.vars = numpy.empty((len(data), self.samplelen)) 
-        
+        self.vars = numpy.empty((len(data), self.samplelen))
+
     def classify(self, sample):
         assert len(sample) == self.samplelen, "Sample vector has invalid length: " + str(len(sample))
         sqrdist = numpy.sum((self.means - sample) ** 2, 1)
@@ -298,12 +298,12 @@ class KMeans():
             """ Compute means GIVEN cluster memberships """
             for i in range(K):
                 members = data[clusters[:,0] == i]
-                self.means[i] = members.mean(0)  # mean over rows per column 
+                self.means[i] = members.mean(0)  # mean over rows per column
 
 def eucdist(v1, v2):
     diff = 0
     for i in range(len(v1)):
-        diff += (v1[i] - v2[i])**2 
+        diff += (v1[i] - v2[i])**2
     return math.sqrt(diff)
 
 def test_kmeans():
@@ -320,7 +320,7 @@ def test_kmeans():
     ax1.plot(data[ 0: 40,0],data[ 0: 40,1],data[ 0: 40,2],'r.') # red
     ax1.plot(data[40: 80,0],data[40: 80,1],data[40: 80,2],'g.') # green
     ax1.plot(data[80:120,0],data[80:120,1],data[80:120,2],'b.') # blue
-    
+
     km = KMeans(data)
     km.train(3)
     ax2 = fig.add_subplot(1,2,2,projection='3d')
@@ -330,7 +330,7 @@ def test_kmeans():
     ax2.plot([km.means[0,0]],[km.means[0,1]],[km.means[0,2]],'ro') # red
     ax2.plot([km.means[1,0]],[km.means[1,1]],[km.means[1,2]],'go') # green
     ax2.plot([km.means[2,0]],[km.means[2,1]],[km.means[2,2]],'bo') # blue
-    
+
     print "Classifications:"
     for i in range(len(data)):
         print data[i], km.classify(data[i])
@@ -343,10 +343,10 @@ def test_kmeans():
     print "Close plot to exit."
     plt.show()
 
-if __name__=='__main__':   
+if __name__=='__main__':
     test_kmeans()
-    
-    
-    
 
-    
+
+
+
+

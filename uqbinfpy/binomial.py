@@ -16,15 +16,15 @@ gamma_c = [
 ################################################################################
 #       binomial_ncdf
 #
-#       Log of one minus the cumulative distribution function of the binomial 
+#       Log of one minus the cumulative distribution function of the binomial
 #       distribution.  The binomial density gives the probability of
 #       k successes in N independent trials each with probability p of success.
 #
 ################################################################################
 def log_binomial_ncdf(N, k, p):
 	if (k==0):
-		return 0 
-	else: 
+		return 0
+	else:
 		return log_betai(k, N-k+1, p)
 
 #
@@ -39,9 +39,9 @@ def betai (a, b, x):
     bt = exp(gammaln(a+b)-gammaln(a)-gammaln(b)+a*log(x)+b*log(1-x))
 
   thresh = (a+1)/(a+b+2.0)
-  if (x<thresh): 
+  if (x<thresh):
     return(bt*betacf(a,b,x)/a)
-  else: 
+  else:
     return(1.0-bt*betacf(b,a,1.0-x)/b)
 #
 # log incomplete beta function
@@ -51,13 +51,13 @@ def log_betai(a, b, x):
   if (x<0 or x>1): die("Bad x=`" + str(x) + "' in routine betai")
   if (x==0 or x==1):
     log_bt = -1e300           # log(0)
-  else: 
+  else:
     log_bt = gammaln(a+b)-gammaln(a)-gammaln(b)+a*log(x)+b*log(1.0-x)
 
   thresh = (a+1.0)/(a+b+2.0)
   if (x<thresh):
     return(log_bt + log(betacf(a,b,x)/a))
-  else: 
+  else:
     return(log(1.0 - exp(log_bt)*betacf(b,a,1.0-x)/b))
 
 #
@@ -71,7 +71,7 @@ def betacf(a, b, x):
   c = 1.0
   d = 1.0-qab*x/qap
 
-  if (abs(d) < FPMIN): d = FPMIN 
+  if (abs(d) < FPMIN): d = FPMIN
   d = 1.0/d
   h = d
 
@@ -79,27 +79,27 @@ def betacf(a, b, x):
     m2 = 2.0*m
     aa = m*(b-m)*x/((qam+m2)*(a+m2))
     d=1.0+aa*d
-    if (abs(d) < FPMIN): d=FPMIN 
+    if (abs(d) < FPMIN): d=FPMIN
     c=1.0+aa/c
-    if (abs(c) < FPMIN): c=FPMIN 
+    if (abs(c) < FPMIN): c=FPMIN
     d = 1.0/d
     h *= d*c
     aa = -(a+m)*(qab+m)*x/((a+m2)*(qap+m2))
 
     d=1.0+aa*d
-    if (abs(d) < FPMIN): d=FPMIN 
+    if (abs(d) < FPMIN): d=FPMIN
     c=1.0+aa/c
-    if (abs(c) < FPMIN): c=FPMIN 
+    if (abs(c) < FPMIN): c=FPMIN
     d = 1.0/d
 
     delta = d*c
     h *= delta
-    if (abs(delta-1.0) < EPS): break 
-  
-  if (m > MAXIT):  print >> sys.stderr, "a or b too big or MAXIT too small in betacf" 
+    if (abs(delta-1.0) < EPS): break
+
+  if (m > MAXIT):  print >> sys.stderr, "a or b too big or MAXIT too small in betacf"
 
   return h
- 
+
  #
 #       compute log gamma function
 #
@@ -107,9 +107,9 @@ def gammaln(x):
 
   xx = x
   s = 1.000000000190015
-  for i in range(0, 6): 
+  for i in range(0, 6):
     xx += 1
-    s += gamma_c[i]/xx 
+    s += gamma_c[i]/xx
 
   res = ((x+0.5) * log(x+5.5)) - (x+5.5) + log(2.5066282746310005*s/x)
   if (res >= 0):

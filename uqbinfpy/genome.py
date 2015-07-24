@@ -8,12 +8,12 @@ class GeneExpression:
     matrix = None           # a numpy two-dim array holding all expression values
     headers = []            # the names of the samples/experiments, e.g. GSM123
     default_value_if_null = None # Default value to use if entry is not set (e.g. addSamples may not add values for all genes)
-    
+
     def __init__(self, datasetname='', headerlist=[], genedict={}):
         """ Create a gene expression data set.
-            The class will store gene names and associated profiles (in which values correspond to "samples"). 
-            It also stores headers (which names correspond to samples, i.e. experiments). 
-            Data should be provided as 
+            The class will store gene names and associated profiles (in which values correspond to "samples").
+            It also stores headers (which names correspond to samples, i.e. experiments).
+            Data should be provided as
             (0) a name of the set
             (1) a list of sample names (headerlist; must agree with the number of values in each gene profile)
             (2) a gene name dictionary where values contain the expression profile (genedict; profile is an iterable with the same number of elements)
@@ -25,25 +25,25 @@ class GeneExpression:
         ndx = 0
         for gene in genedict:
             self.genes[gene] = ndx
-            ndx += 1 
+            ndx += 1
         self.matrix = self._createMatrix(genedict)
         if len(self.matrix) == 0:
             nsamples = 0
         else:
-            nsamples = len(self.matrix[0])  
+            nsamples = len(self.matrix[0])
         if isinstance(headerlist, str):
             headerlist = [headerlist]
         if len(headerlist) != nsamples:
             raise RuntimeError("The number of headers (%d) is not equal to the number of samples (%d)" % (len(headerlist), nsamples))
         self.headers = headerlist or ['S%d' % cnt for cnt in range(nsamples)]
-        
+
     def _createMatrix(self, genedict):
         """ Internal method for constructing a numpy matrix from a gene-profile dictionary. """
         ngenes = len(self.genes)
         allow_new_genes = False
         if ngenes == 0:  # if instance is empty, include all genes in dict
             ngenes = len(genedict)
-            allow_new_genes = True 
+            allow_new_genes = True
         nsamples = 0
         for gene in genedict:
             profile = genedict[gene]
@@ -69,7 +69,7 @@ class GeneExpression:
                     self.genes[gene] = ndx
                     ndx += 1
         return matrix
-     
+
     def getHeaders(self, indices = None):
         """ Retrieve headers (names of experiments/samples).
             If indices is None (default), all headers are returned, e.g.
@@ -82,14 +82,14 @@ class GeneExpression:
             >>> g.getHeaders([1,0])
             ['Sample2', 'Sample1']
         """
-        if indices == None: 
+        if indices == None:
             return self.headers
         elif isinstance(indices, int) or indices is slice:
             return self.headers[indices]
         else:
             ret = []
             for index in indices:
-                ret.append(self.headers[index]) 
+                ret.append(self.headers[index])
             return ret
 
     def getGenes(self, names = None):
@@ -97,7 +97,7 @@ class GeneExpression:
             If names is None (default), all gene names are returned, e.g.
             >>> g.getGenes()
             ['G1', 'G2', 'G3']
-            If names is a single string, the profile for the corresponding entry is returned, e.g. 
+            If names is a single string, the profile for the corresponding entry is returned, e.g.
             >>> g.getGenes('G2')
             array([ 4.1, -0.9])
             If names is an iterable of strings (multiple gene names), a dictionary with gene name as key and profile as value is returned.
@@ -111,7 +111,7 @@ class GeneExpression:
         else:
             ret = {}
             for name in names:
-                ret[name] = self.matrix[self.genes[name],:] 
+                ret[name] = self.matrix[self.genes[name],:]
             return ret
 
     def __getitem__(self, ndx):
@@ -120,10 +120,10 @@ class GeneExpression:
             array([[ 2.1 , -2.1 ],
                    [ 4.1 , -0.9 ],
                    [ 0.13,  1.23]])
-            Note that the order of rows/genes is NOT necessarily the same as that used for inserting the data. 
+            Note that the order of rows/genes is NOT necessarily the same as that used for inserting the data.
         """
         return self.matrix[:,ndx]
-    
+
     def getHeaderIndex(self, headers):
         """ Find the index of the named experiment.
             Raises a ValueError if not in list. """
@@ -131,7 +131,7 @@ class GeneExpression:
             return self.headers.index(headers)
         else:
             return [self.headers.index(header) for header in headers]
-    
+
     def getSamples(self, samples):
         """Construct a gene dictionary including only samples in specified indices, e.g.
         >>> g.getSamples(0)
@@ -156,7 +156,7 @@ class GeneExpression:
         """Get a list of gene names, sorted by order of value in specified sample, e.g.
         >>> g.sort(0)
             ['G2', 'G3', 'G1']
-        Then retrieve actual genes using e.g. 
+        Then retrieve actual genes using e.g.
         >>> g.getGenes('G2')
             array([-0.9,  4.1])
         """
@@ -168,10 +168,10 @@ class GeneExpression:
         name_tuples = sorted(self.genes.items(), key=lambda v: v[1]) # put all gene names in order of the matrix of profiles
         names = []
         if descending:
-            for (name, index) in [name_tuples[index] for index in sort_ndx[::-1]]: # reverse the order 
+            for (name, index) in [name_tuples[index] for index in sort_ndx[::-1]]: # reverse the order
                 names.append(name)
         else:
-            for (name, index) in [name_tuples[index] for index in sort_ndx]: # maintain order 
+            for (name, index) in [name_tuples[index] for index in sort_ndx]: # maintain order
                 names.append(name)
         return names
 
@@ -182,7 +182,7 @@ class GeneExpression:
            >>> g.addSamples('Sample3', {'G1': 3.4, 'G2': -3.0})
         """
         newmat = self._createMatrix(genedict)
-        nsamples = len(newmat[0])  
+        nsamples = len(newmat[0])
         if headerlist != None:
             if isinstance(headerlist, str):
                 headerlist = [headerlist]
@@ -211,7 +211,7 @@ class GeneExpression:
         for (name, ndx) in self.genes.items():
             mygenes[name] = mlr[ndx]
         return mygenes
-    
+
     def getPearson(self, probeID):
         """ Given a probe identifier, returns a gene/probe dictionary:
         identifiers to correlation coefficients with the specified probe. """
@@ -222,7 +222,7 @@ class GeneExpression:
             other = self.matrix[ndx, :]
             mygenes[name] = pearson(profile, other)
         return mygenes
-    
+
     def writeGEOFile(self, filename):
         """ Save data as a truncated GEO SOFT file named filename. """
         line = '^DATASET = ' + self.dataset + '\n'
@@ -240,7 +240,7 @@ class GeneExpression:
         fh = open(filename, 'w')
         fh.write(line)
         fh.close()
-    
+
     def getZScore(self, index):
         """ Get the Z-score of each expression value.
             index can be a list of indices (for which the z-score is computed independently).

@@ -10,11 +10,11 @@ Fisher's Exact Test:
     >>> print p
     >>> p2 = getFET2tail(838, 159, 78, 29, False) # the two-tailed p-value (0.006)
     >>> print p2
-    
+
 Wilcoxon Ranksum: (should result in a p-value around 0.0455)
     >>> p = getRSpval([4.6,5.1,5.8,6.5,4.7,5.2,6.1,7.2,4.9,5.5,6.5], [5.2,5.6,6.8,8.1,5.3,6.2,7.7,5.4,6.3,8.0])
     >>> print p
-    
+
 The Z-score: (should result in a z-score of around -1.78 [number of SDs from the mean] and a p-value of 0.037)
     >>> z = getZScore([12.1, 11.2, 12.3, 11.8, 11.2, 12.3, 11.1, 13.2, 12.3, 11.6, 10.8], 10.6); print z
     >>> p = f(z); print p
@@ -29,21 +29,21 @@ def getFETpval(a1, a2, b1, b2, left=True):
     an observed distribution specified by b1 and b2, i.e.
     determines the p-value of b's outcomes 1 and 2.
     The default setting is to use the "left" side of the density
-    to determine the p-value. 
-    
+    to determine the p-value.
+
     Returns p-value."""
     (prob, sless, sright, sleft, slarg)=getFETprob(a1, a2, b1, b2)
     if left:
         return sless # sless
     else:
         return slarg # slarg
-     
+
 def getFET2tail(a1, a2, b1, b2):
     """Computes Fisher's exact test based on a
     null-hypothesis distribution specified by the totals, and
     an observed distribution specified by b1 and b2, i.e.
     determines the two-tailed p-value of b's outcomes 1 and 2.
-    
+
     Returns p-value."""
     (prob, sless, sright, sleft, slarg)=getFETprob(a1, a2, b1, b2)
     return min(1.0, sleft + sright)
@@ -53,9 +53,9 @@ def getFETprob(a1, a2, b1, b2):
     null-hypothesis distribution specified by the totals, and
     an observed distribution specified by b1 and b2, i.e.
     determines the probability of b's outcomes 1 and 2.
-    
+
     Returns an immutable list consisting of the exact
-    probability, and assorted p-values (sless, sright, sleft, 
+    probability, and assorted p-values (sless, sright, sleft,
     slarg) based on the density."""
     sless  = 0.0
     sright = 0.0
@@ -65,10 +65,10 @@ def getFETprob(a1, a2, b1, b2):
     row1 = a1 + a2 # the row containing the null hypothesis
     col1 = a1 + b1 # the column containing samples for outcome 1
     max = row1
-    if col1 < max: 
+    if col1 < max:
         max = col1
     min = row1 + col1 - n
-    if min < 0: 
+    if min < 0:
         min = 0
     if min == max:
         rt = (prob, sless, sright, sleft, slarg) = (1.0,1.0,1.0,1.0,1.0)
@@ -76,34 +76,34 @@ def getFETprob(a1, a2, b1, b2):
     prob = hyper0(a1, row1, col1, n)
     sleft = 0.0
     p = hyper(min)
-    
+
     i = min + 1
     while p < (0.99999999 * prob):
         sleft = sleft + p
         p = hyper(i)
         i = i + 1
-        
+
     i = i - 1
     if p < (1.00000001 * prob):
         sleft = sleft + p
     else:
         i = i - 1
-        
+
     sright = 0.0
     p = hyper(max)
-    
+
     j = max - 1
     while p < (0.99999999 * prob):
         sright = sright + p
         p = hyper(j)
         j = j - 1
-        
+
     j = j + 1
     if p < (1.00000001 * prob):
         sright = sright + p
     else:
         j = j + 1
-        
+
     if abs(i - a1) < abs(j - a1):
         sless = sleft
         slarg = 1.0 - sleft + prob
@@ -113,7 +113,7 @@ def getFETprob(a1, a2, b1, b2):
     return (prob, sless, sright, sleft, slarg)
 
 def lngamm(z):
-    # Reference: "Lanczos, C. 'A precision approximation 
+    # Reference: "Lanczos, C. 'A precision approximation
     # of the gamma function', J. SIAM Numer. Anal., B, 1, 86-96, 1964."
     # Translation of  Alan Miller's FORTRAN-implementation
     # See http://lib.stat.cmu.edu/apstat/245
@@ -182,7 +182,7 @@ def meanvar(X):
 def getZScore(X, sample):
     (mu, var) = meanvar(X)
     return (sample - mu) / math.sqrt(var)
-    
+
 def getZScores(X):
     (mu, var) = meanvar(X)
     Y = [((x - mu) / math.sqrt(var)) for x in X]
@@ -198,11 +198,11 @@ def getPearson(X, Y):
     n = len(X)
     sum = 0
     for i in range(n):
-        sum += (X[i] * Y[i]) 
+        sum += (X[i] * Y[i])
     if n == 0 or Xvar == 0 or Yvar == 0:
         return 0
     return (sum - n * (Xmu * Ymu)) / (n * math.sqrt(Xvar) * math.sqrt(Yvar))
-    
+
 # normal distribution
 def error(x):
     """
@@ -315,14 +315,14 @@ def inverse(y0):
     Returns the argument, x, for which the area under the
     Gaussian probability density function (integrated from
     minus infinity to x) is equal to y.
-    
+
     For small arguments 0 < y < exp(-2), the program computes
     z = sqrt( -2.0 * log(y) );  then the approximation is
     x = z - log(z)/z  - (1/z) P(1/z) / Q(1/z).
     There are two rational functions P/Q, one for 0 < y < exp(-32)
     and the other for y up to exp(-2).  For larger arguments,
     w = y - 0.5, and  x/sqrt(2pi) = w + w**3 R(w**2)/S(w**2)).
-    
+
     Cephes Math Library Release 2.8:  June, 2000
     Copyright 1984, 1987, 1988, 1992, 2000 by Stephen L. Moshier
     """
@@ -429,16 +429,16 @@ def inverse(y0):
 
 def getRSpval(a, b):
     """
-    Compute the Wilcoxon rank sum test (aka the Mann-Whitney U-test), return the p-value 
+    Compute the Wilcoxon rank sum test (aka the Mann-Whitney U-test), return the p-value
     The approximation is based on the normal distribution and is reliable
-    when sample sets are of size 5 or larger. 
-    The default is based on the area of the left side of the Gaussian, relative the 
+    when sample sets are of size 5 or larger.
+    The default is based on the area of the left side of the Gaussian, relative the
     estimated z-value.
     NULL: a==b ONE-SIDED: a<b (default=left), for ONE-SIDED: b<a (right) use 1-returned value.
     For a two-tailed, double the p-value.
     Implemented by Mikael Boden
     """
-    
+
     # create a new list consisting of the two sample sets that can be sorted
     lst=[]
     for elem in a:
@@ -447,7 +447,7 @@ def getRSpval(a, b):
         lst.append([elem, -1, 0])
     # ok sort it
     lst.sort(lambda p, q: cmp(p[0], q[0]))
-    
+
     # let's go through it and edit each rank
     rank=0
     na=0
@@ -487,11 +487,11 @@ def getRSpval(a, b):
         else:
             tb_obs+=entry[2]
 
-    tab=ta_obs+tb_obs                     # sum of n ranks in groups A and B combined 
+    tab=ta_obs+tb_obs                     # sum of n ranks in groups A and B combined
     sd=math.sqrt((na*nb*(n+1.0))/12.0)    # the standard deviation is the same in both sets
     ta_null=na*(n+1.0)/2.0                # the sum of the "null" case
     tb_null=nb*(n+1.0)/2.0                # the sum of the "null" case
-    ta_max=na*nb+(na*(na+1.0))/2.0        # the max sum set A can take 
+    ta_max=na*nb+(na*(na+1.0))/2.0        # the max sum set A can take
     tb_max=na*nb+(nb*(nb+1.0))/2.0        # the max sum set B can take
     ua=ta_max-ta_obs                      # the "U" value for A which is the mirror of ...
     ub=tb_max-tb_obs                      # the "U" value for B (we only need one)
@@ -501,10 +501,10 @@ def getRSpval(a, b):
         da=-0.5
     else:
         da=+0.5
-    if tb_obs>tb_null:                    # a "continuity correction" for B       
+    if tb_obs>tb_null:                    # a "continuity correction" for B
         db=-0.5
     else:
-        db=+0.5            
+        db=+0.5
     za=((ta_obs-ta_null)+da)/sd           # the z value for A which is the mirror of ...
     zb=((tb_obs-tb_null)+db)/sd           # the z value for B (we only need one)
     p=f(za)                        # figure out the area of the normal distribution

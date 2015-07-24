@@ -9,19 +9,19 @@ import prob
 import sequence
 
 class GibbsMotif():
-    """ A class for discovering linear motifs in sequence data. 
-        Uses Gibb's sampling (Lawrence et al., Science 262:208-214 1993). 
+    """ A class for discovering linear motifs in sequence data.
+        Uses Gibb's sampling (Lawrence et al., Science 262:208-214 1993).
         Also see http://bayesweb.wadsworth.org/gibbs/content.html which has info
         on "site sampling", "motif sampling", "recursive sampling" and "centroid
         sampling". The first is implemented (roughly) below. """
-    
+
     def __init__(self, seqs, length, alignment = None):
         """ Construct a "discovery" session by providing the sequences that will be used.
             seqs: sequences in which the motif is sought
             length: length of sought pattern (W)
             alignment: positions in each sequence for the initial alignment (use only if the alignment
             has been determined from a previous run).
-            """ 
+            """
         self.seqs = seqs
         self.length = length # length of motif 1..W
         seqs = self.seqs
@@ -37,10 +37,10 @@ class GibbsMotif():
             k += 1
         """ Initialise parameters that are part of the setup (below) """
         self.alignment = alignment or [ random.randint(0, len(s) - length) for s in seqs ] # starting positions defining alignment
-        
+
     def discover(self, pseudocount = None, niter = None):
-        """ Find the most probable common pattern represented by a 
-            position weight matrix (PWM), based on W+1 distributions 
+        """ Find the most probable common pattern represented by a
+            position weight matrix (PWM), based on W+1 distributions
             pseudocount: the distribution used for pseudo-counts (default is uniform)
             niter: number of iterations (if None, 100*N is used; where N is number of seqs).
         """
@@ -49,13 +49,13 @@ class GibbsMotif():
         seqs = self.seqs
         W = self.length    # motif width
         """ background that will be used as pseudo-counts """
-        pseudocount = pseudocount or prob.Distrib(self.alphabet, 1.0)                
+        pseudocount = pseudocount or prob.Distrib(self.alphabet, 1.0)
         """ q: the foreground distribution (specifying the W distributions in aligned columns)
             p: the background distribution (for non-aligned positions in all sequences) """
-        q = [ prob.Distrib(self.alphabet, pseudocount) for _ in range(W) ] 
-        p = prob.Distrib(self.alphabet, pseudocount)                       
+        q = [ prob.Distrib(self.alphabet, pseudocount) for _ in range(W) ]
+        p = prob.Distrib(self.alphabet, pseudocount)
         a = self.alignment
-        
+
         new_z = random.randint(0, N-1) # pick a random sequence to withhold
         for k in range(N):
             if k != new_z:
@@ -67,14 +67,14 @@ class GibbsMotif():
                         offset += 1
                     else: # outside pattern
                         p.observe(seqs[k][i])
-        
+
         """ Main loop: predictive update step THEN sampling step, repeat... """
         niter = niter or 100 * N # use specified number of iterations or default
         for round in range(niter):
-        
+
             """ Predictive update step:
-                One of the N sequences are chosen at random: z. 
-                We will not use it in the profile, nor background so we 
+                One of the N sequences are chosen at random: z.
+                We will not use it in the profile, nor background so we
                 exclude it from our counts. """
             prev_z = new_z
             new_z = random.randint(0, N - 1)
@@ -145,18 +145,18 @@ class GibbsMotif():
     def getForeground(self):
         """ Return the probability distributions for columns in the discovered alignment. """
         return self.q
-    
+
     def getBackground(self):
         """ Return the probability distributions for the background used in the discovery. """
         return self.p
-    
+
 def getAlignment(seqs, motif, background):
-    """ Retrieve the best alignment (positions) in provided sequences defined by the specified 
-        motif params. 
+    """ Retrieve the best alignment (positions) in provided sequences defined by the specified
+        motif params.
         seqs: sequence data
         motif: the foreground distribution (specifying the W distributions in aligned columns)
-        background: the background distribution (for non-aligned positions in all sequences) 
-        Note that this is similar but not the same as the stochastically selected alignment that 
+        background: the background distribution (for non-aligned positions in all sequences)
+        Note that this is similar but not the same as the stochastically selected alignment that
         is kept while training. It can be implemented using a PWM constructed from a previous session.
         Note also that this alignment can be used as input to continue an earlier discovery session
         when motif distributions had been saved.  """
@@ -164,7 +164,7 @@ def getAlignment(seqs, motif, background):
     q = motif
     p = background
     W = len(q)
-    a = [0 for _ in range(N)] # start positions unknown 
+    a = [0 for _ in range(N)] # start positions unknown
     for k in range(N):
         k_len = len(seqs[k]) # length of seq k
         Amax = None
@@ -185,17 +185,17 @@ def getAlignment(seqs, motif, background):
     return a
 
 class GibbsAlign():
-    """ A class for performing ungapped sequence alignment. 
-        Uses Gibb's sampling (Lawrence et al., Science 262:208-214 1993). 
+    """ A class for performing ungapped sequence alignment.
+        Uses Gibb's sampling (Lawrence et al., Science 262:208-214 1993).
     """
-    
+
     def __init__(self, seqs, length, alignment = None):
         """ Construct a "discover" session by providing the sequences that will be aligned.
             seqs: sequences that will be aligned
             length: maximum length of alignment (must be equal or greater than max sequence length)
             alignment: positions in each sequence for the initial alignment (use only if the alignment
             has been determined from a previous run).
-            """ 
+            """
         self.seqs = seqs
         self.length = length # length of motif 1..W
         seqs = self.seqs
@@ -211,10 +211,10 @@ class GibbsAlign():
             k += 1
         """ Initialise parameters that are part of the setup (below) """
         self.alignment = alignment or [ random.randint(0, length - len(s)) for s in seqs ] # starting offsets defining alignment
-        
+
     def discover(self, pseudocount = None, niter = None):
-        """ Find the most probable common pattern represented by a 
-            position weight matrix (PWM), based on W+1 distributions 
+        """ Find the most probable common pattern represented by a
+            position weight matrix (PWM), based on W+1 distributions
             pseudocount: the distribution used for pseudo-counts (default is uniform)
             niter: number of iterations (if None, 100*N is used; where N is number of seqs).
         """
@@ -223,13 +223,13 @@ class GibbsAlign():
         seqs = self.seqs
         W = self.length    # alignment width
         """ background that will be used as pseudo-counts """
-        pseudocount = pseudocount or prob.Distrib(self.alphabet, 1.0)                
+        pseudocount = pseudocount or prob.Distrib(self.alphabet, 1.0)
         """ q: the foreground distribution (specifying the W distributions in aligned columns)
             p: the background distribution (for non-aligned positions in all sequences) """
-        q = [ prob.Distrib(self.alphabet, pseudocount) for _ in range(W) ] 
-        p = prob.Distrib(self.alphabet, pseudocount)                       
+        q = [ prob.Distrib(self.alphabet, pseudocount) for _ in range(W) ]
+        p = prob.Distrib(self.alphabet, pseudocount)
         a = self.alignment
-        
+
         new_z = random.randint(0, N-1) # pick a random sequence to withhold
         for k in range(N):
             if k != new_z:
@@ -241,14 +241,14 @@ class GibbsAlign():
                         offset += 1
                     else: # outside pattern
                         p.observe(seqs[k][i])
-        
+
         """ Main loop: predictive update step THEN sampling step, repeat... """
         niter = niter or 100 * N # use specified number of iterations or default
         for round in range(niter):
-        
+
             """ Predictive update step:
-                One of the N sequences are chosen at random: z. 
-                We will not use it in the profile, nor background so we 
+                One of the N sequences are chosen at random: z.
+                We will not use it in the profile, nor background so we
                 exclude it from our counts. """
             prev_z = new_z
             new_z = random.randint(0, N - 1)
@@ -319,7 +319,7 @@ class GibbsAlign():
     def getForeground(self):
         """ Return the probability distributions for columns in the discovered alignment. """
         return self.q
-    
+
     def getBackground(self):
         """ Return the probability distributions for the background used in the discovery. """
         return self.p
@@ -327,14 +327,14 @@ class GibbsAlign():
 # Example 1: Find the peroxisome targeting signal
 if __name__=='__main__0':
     import os
-    os.chdir('/Users/mikael/workspace/binf/data/')  # set to the directory where you keep your files 
+    os.chdir('/Users/mikael/workspace/binf/data/')  # set to the directory where you keep your files
     seqs = sequence.readFastaFile('pex2.fa', symbol.Protein_Alphabet)
     W = 3
     pseudo = prob.readDistrib('blosum62.distrib')
     gibbs = GibbsMotif(seqs, W)
     q = gibbs.discover(pseudo)
     p = gibbs.getBackground()
-    
+
     # Let's display the results, i.e. the best matches to the found motif
     a = getAlignment(seqs, q, p)
     k = 0
@@ -346,18 +346,18 @@ if __name__=='__main__0':
     prob.writeDistribs(q, 'pex2q.distrib')
     p.writeDistrib('pex2p.distrib')
 
-    # the data can be re-loaded and used the following way     
+    # the data can be re-loaded and used the following way
     new_q = prob.readDistribs('pex2q.distrib')
     new_p = prob.readDistrib('pex2p.distrib')
     a = getAlignment(seqs, new_q, new_p) # the best alignment is identified from loaded motif
     gibbs2 = GibbsMotif(seqs, W, a) # alignment is provided to bootstrap training
     gibbs2.discover(pseudo, 20000)  # train
 
-# Example 2: Find DNA binding signals in some chip-seq data 
-# This data set is large so takes time... ~10 mins on my quad-core iMac; 100000 rounds are sufficient in my tests, should reach LL~9000   
-if __name__=='__main__1':   
+# Example 2: Find DNA binding signals in some chip-seq data
+# This data set is large so takes time... ~10 mins on my quad-core iMac; 100000 rounds are sufficient in my tests, should reach LL~9000
+if __name__=='__main__1':
     import os
-    os.chdir('/Users/mikael/workspace/binf/data/')  # set to the directory where you keep your files 
+    os.chdir('/Users/mikael/workspace/binf/data/')  # set to the directory where you keep your files
     seqs = sequence.readFastaFile('chipseq_2330.fa', symbol.DNA_Alphabet)
     W = 10
     gibbs = GibbsMotif(seqs, W)

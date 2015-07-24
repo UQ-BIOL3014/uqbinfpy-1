@@ -7,10 +7,10 @@ import math
 from scipy import stats
 """This python module reads in sam files from RNA-seq experiment and processes them and RNA-seq data"""
 
-    
+
 def sam_reader(filename):
     """Mandatory fields are QNAME,FLAG,RNAME,POS,MAPQ,CIGAR,RNEXT,PNEXT,TLEN,SEQ,QUAL
-for more info http://samtools.github.io/hts-specs/SAMv1.pdf """ 
+for more info http://samtools.github.io/hts-specs/SAMv1.pdf """
     data=[]
     f= open(filename,'r')
     for row in f:
@@ -19,7 +19,7 @@ for more info http://samtools.github.io/hts-specs/SAMv1.pdf """
         else:
             info=row.strip().split('\t')
             data.append(info)
-    return data 
+    return data
 
 
 def base_percentages(reads):
@@ -36,7 +36,7 @@ def base_percentages(reads):
     for nuc in nucs:
         freqs[nuc]=float(counts[nuc])/sum(counts.values())
     return freqs
-    
+
 
 def numberofreads(reads):
     """Incremented for every sequence-containing line in the sam file, regardless of whether it represents an alignment.
@@ -63,8 +63,8 @@ you will get an accurate "percentage of reads aligned" statistic.
         mapped=len(mapped)
     print "number of mapped reads",mapped
     return store_reads
-            
-    
+
+
 def mappedBases(mapped_reads):
     """Total number of mapped bases in sam file"""
     seq=""
@@ -76,12 +76,12 @@ def forward(mapped_reads):
     """The number of lines in the sam file that were aligned to the "forward" strand. No accounting is done on duplicates."""
     forward=[read for read in mapped_reads if read[9]>0]
     return forward
-            
+
 
 def reverse(mapped_reads):
     """The number of lines in the sam file that were aligned to the "reverse" strand. No accounting is done on duplicates."""
     reverse=[read for read in mapped_reads if read[9]<0]
-    return reverse 
+    return reverse
 
 
 
@@ -106,7 +106,7 @@ def subgroups(mapped_reads):
     print len(group2),"in 1e-3<=p<1e-2 group"
     print len(group3),"in 1e-2<=p<1 group"
     return group1,group2,group3
-               
+
 
 
 def dinuc_freq(mapped_reads):
@@ -154,8 +154,8 @@ def PercentReadsAligned(group1,group2,group3,numfastq):
     plt.pie(x,labels=labels,autopct='%1.1f%%', shadow=True)
     plt.title('Mapping stats')
     plt.show()
-    return Mapped 
-        
+    return Mapped
+
 
 
 def length_stats(group1,group2,group3):
@@ -199,7 +199,7 @@ def plot_length_distrib(group,name):
     plt.show()
 
 def inv_logit(p):
-    return 10**(p/-10) 
+    return 10**(p/-10)
 
 
 
@@ -215,7 +215,7 @@ def plot_base_composition(reads,sym):
         all_nucs.append(nucs)
     all_items=[]
     counts=[]
-    pos=range(1,len(seq)+1) 
+    pos=range(1,len(seq)+1)
     for dicts in all_nucs:
         for item in dicts.items():
             all_items.append(item)
@@ -230,9 +230,9 @@ def plot_base_composition(reads,sym):
     plt.xlabel("Position")
     plt.ylabel("number of mapped reads")
     plt.title(sym)
-    plt.show()       
-    return counts 
-        
+    plt.show()
+    return counts
+
 #####################################################
 #Transcript reader
 
@@ -245,11 +245,11 @@ def raw_count_reader(filename):
             pass
         else:
             info=row.strip().split('\t')
-            data[info[0]]=[int(info[1]),int(info[2]),int(info[3]),int(info[4]),float(info[5])] #t1,rept1,t10,rept10,len 
-    return data 
+            data[info[0]]=[int(info[1]),int(info[2]),int(info[3]),int(info[4]),float(info[5])] #t1,rept1,t10,rept10,len
+    return data
 
 
-#####Normalisation methods 
+#####Normalisation methods
 
 
 def get_RPKM(data,num_map1,num_map2,num_map3,num_map4):
@@ -269,18 +269,18 @@ def get_RPKM(data,num_map1,num_map2,num_map3,num_map4):
                 rpkm= float(vals[n])/(lengths[n]*(float(num_mapped_reads[n])/10**6))
                 rpkms.append(rpkm)
         all_rpkms.append(rpkms)
-    #return gene names and rpkms 
+    #return gene names and rpkms
     for i in range(0,len(data.keys())):
         final[data.keys()[i]]=[float(all_rpkms[i][0]),float(all_rpkms[i][1]),float(all_rpkms[i][2]),float(all_rpkms[i][3])]
-    return final 
+    return final
 
 def write_RPKM_data(RPKM_data,filename):
     """write RPKM data to a file"""
     f=open(filename,'w')
     for i in range(0,len(RPKM_data)):
         f.write("%s\t%d\t%d\t%d\t%d\n"%(RPKM_data.keys()[i],int(RPKM_data.values()[i][0]),int(RPKM_data.values()[i][1]),int(RPKM_data.values()[i][2]),int(RPKM_data.values()[i][3])))
-    f.close() 
-        
+    f.close()
+
 
 
 
@@ -324,7 +324,7 @@ def plotreprpkm(rpkm_data,timepoint):
 R2="""+str(R2)
     m,b= np.polyfit(one,two,1)
     plt.figure(1, figsize=(8,8))
-    plt.plot(one, np.array(one)*m +b,'r-') 
+    plt.plot(one, np.array(one)*m +b,'r-')
     plt.text(3000, max(two)-1000,name , fontsize=12)
     plt.xlabel("RPKM replicate 1")
     plt.ylabel("RPKM replicate 2")
@@ -347,7 +347,7 @@ def plotMAreprpkm(rpkm_data,timepoint):
             y=np.log2(rpkm_data.values()[i][2]+1)-np.log2(rpkm_data.values()[i][3]+1)
             x=(np.log2(rpkm_data.values()[i][2]+1)+np.log2(rpkm_data.values()[i][3]+1))/2
             m.append(y)
-            a.append(x)    
+            a.append(x)
     plt.figure(1, figsize=(8,8))
     ax = plt.axes([0.1, 0.1, 0.8, 0.8])
     plt.plot(a,m,'o')
@@ -371,7 +371,7 @@ def get_cv(data1,condition):
                 pass
             else:
                 cv=float(mean+1)/(std+1)
-                cvs.append(cv) 
+                cvs.append(cv)
     else:
         for i in range(0,len(data1.values())):
             mean = np.mean([data1.values()[i][2],data1.values()[i][3]])
@@ -380,10 +380,10 @@ def get_cv(data1,condition):
                 pass
             else:
                 cv=float(mean+1)/(std+1)
-                cvs.append(cv)          
-    return cvs 
-        
-        
+                cvs.append(cv)
+    return cvs
+
+
 def get_boxplots(norm,original):
     """distribution of the coeficient of variation across samples (replicates) normalised using the methods provided"""
     bp=plt.boxplot([norm,original],notch=False, patch_artist=True)
@@ -396,9 +396,9 @@ def get_boxplots(norm,original):
     x=[1,2]
     plt.xticks(x,my_xticks)
     plt.ylim(0,400)
-    plt.show()       
-                   
-               
+    plt.show()
+
+
 def plotavg_cv(norm,original):
     """distribution of the coeficient of variation across samples (replicates) normalised using the methods provided"""
     x=[1,2]
@@ -518,40 +518,40 @@ def Welcht(rpkm):
     for i in range(0,len(rpkm.values())):
         result[rpkm.keys()[i]]=[rpkm.values()[i][0],rpkm.values()[i][1],rpkm.values()[i][2],rpkm.values()[i][3],corr_pvals[i]]
     return result
-    
-  
 
-def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):                
-    """                                                                                                   
-    consistent with R print correct_pvalues_for_multiple_testing([0.0, 0.01, 0.029, 0.03, 0.031, 0.05, 0.069, 0.07, 0.071, 0.09, 0.1]) 
+
+
+def correct_pvalues_for_multiple_testing(pvalues, correction_type = "Benjamini-Hochberg"):
     """
-    from numpy import array, empty                                                                        
-    pvalues = array(pvalues) 
-    n = float(pvalues.shape[0])                                                                           
+    consistent with R print correct_pvalues_for_multiple_testing([0.0, 0.01, 0.029, 0.03, 0.031, 0.05, 0.069, 0.07, 0.071, 0.09, 0.1])
+    """
+    from numpy import array, empty
+    pvalues = array(pvalues)
+    n = float(pvalues.shape[0])
     new_pvalues = empty(n)
-    if correction_type == "Bonferroni":                                                                   
+    if correction_type == "Bonferroni":
         new_pvalues = n * pvalues
-    elif correction_type == "Bonferroni-Holm":                                                            
-        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+    elif correction_type == "Bonferroni-Holm":
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]
         values.sort()
-        for rank, vals in enumerate(values):                                                              
+        for rank, vals in enumerate(values):
             pvalue, i = vals
-            new_pvalues[i] = (n-rank) * pvalue                                                            
-    elif correction_type == "Benjamini-Hochberg":                                                         
-        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]                                      
+            new_pvalues[i] = (n-rank) * pvalue
+    elif correction_type == "Benjamini-Hochberg":
+        values = [ (pvalue, i) for i, pvalue in enumerate(pvalues) ]
         values.sort()
-        values.reverse()                                                                                  
+        values.reverse()
         new_values = []
-        for i, vals in enumerate(values):                                                                 
+        for i, vals in enumerate(values):
             rank = n - i
-            pvalue, index = vals                                                                          
-            new_values.append((n/rank) * pvalue)                                                          
-        for i in xrange(0, int(n)-1):  
-            if new_values[i] < new_values[i+1]:                                                           
-                new_values[i+1] = new_values[i]                                                           
+            pvalue, index = vals
+            new_values.append((n/rank) * pvalue)
+        for i in xrange(0, int(n)-1):
+            if new_values[i] < new_values[i+1]:
+                new_values[i+1] = new_values[i]
         for i, vals in enumerate(values):
             pvalue, index = vals
-            new_pvalues[index] = new_values[i]                                                                                                                  
+            new_pvalues[index] = new_values[i]
     return new_pvalues
 
 
@@ -587,7 +587,7 @@ def heatmap_cluster(data_matrix,timepoint):
     dend = sch.dendrogram(linked, orientation='right') # sets the oirentation root at the right
     axdendro.set_xticks([])
     axdendro.set_yticks([])
-    #plot distance matrix 
+    #plot distance matrix
     axmatrix = fig.add_axes([0.3,0.1,0.6,0.8])
     index = dend['leaves']
     D=D[index,:]
@@ -600,16 +600,16 @@ def heatmap_cluster(data_matrix,timepoint):
     fig.colorbar(im, cax=axcolor)
     #display the heatmap
     fig.savefig(timepoint+'heatmap.png')
-    
-    
-        
-   
+
+
+
+
 ###########Test Methods
 
-        
+
 t1=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1.sam")
 
-# determine the number of reads 
+# determine the number of reads
 reads=numberofreads(t1)
 print "number of reads",reads
 
@@ -617,9 +617,9 @@ print "number of reads",reads
 base=base_percentages(t1)
 print base
 
-#obtain the mapped reads 
+#obtain the mapped reads
 mapped_read=mapped_reads(t1,True)
-print mapped_read[0:5] 
+print mapped_read[0:5]
 
 #number of mapped bases
 num_bases=mappedBases(mapped_read)
@@ -630,32 +630,32 @@ print "number of mapped bases",num_bases
 ############################################
 #Group the mapped_reads                    #
 ############################################
-###get the range of numbers that comprimise the mapping quality 
+###get the range of numbers that comprimise the mapping quality
 nums=[]
 for read in mapped_read:
     nums.append(read[4])
 nums=set(nums)
 print "get a feel for the range of mapping qualities in this sam file", sorted(nums)
-###Get the probability MAPQ=-10*log10*Pr{mapping position is wrong} 
+###Get the probability MAPQ=-10*log10*Pr{mapping position is wrong}
 for num in nums:
     score=inv_logit(int(num))
     print "MAPQ and probability"
     print num,score
-    
+
 group1,group2,group3=subgroups(mapped_read)
 
 #dinuc frequency of the mapped reads
 
 nuc=dinuc_freq(group1)
-print "dinucleotide frequency of mapped reads(p<1e-3)",nuc 
+print "dinucleotide frequency of mapped reads(p<1e-3)",nuc
 
-#get the percentage of reads aligned need to know number of entries in fastq file 
+#get the percentage of reads aligned need to know number of entries in fastq file
 percent=PercentReadsAligned(group1,group2,group3,reads)
 print percent
 
 
 len_stats=length_stats(group1,group2,group3)
-print len_stats 
+print len_stats
 
 #plot the length of all three subgroups
 plot_length_distrib(group1,"p<1e-3")
@@ -677,7 +677,7 @@ t10=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t10.sam")
 t1_2=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t1_2.sam")
 t10_2=sam_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/t10_2.sam")
 
-##get number of mapped reads printed to screen 
+##get number of mapped reads printed to screen
 mapped_read=mapped_reads(t1,True)
 mapped_read=mapped_reads(t10,True)
 mapped_read=mapped_reads(t1_2,True)
@@ -685,11 +685,11 @@ mapped_read=mapped_reads(t10_2,True)
 
 raw_data=raw_count_reader("/Users/mikael/workspace/binfpy/BIOL3014/prac_5/raw_counts.txt")
 
-### Perform the normalisation methods 
+### Perform the normalisation methods
 
 rpkm1=get_RPKM(raw_data,118898,121634,136286,135102)
 
-# write RPKM to output 
+# write RPKM to output
 write_RPKM_data(rpkm1,"/Users/mikael/workspace/binfpy/BIOL3014/prac_5/RPKM_counts.txt")
 
 #Visualize variability among replicates using RPKM
@@ -699,13 +699,13 @@ plotMAreprpkm(rpkm1,"t1")
 plotMAreprpkm(rpkm1,"t10")
 #######################################
 
-####Get CV 
+####Get CV
 meth1= get_cv(rpkm1,"t1")
 orig=get_cv(raw_data,"t1")
 meth2= get_cv(rpkm1,"t10")
 orig2=get_cv(raw_data,"t10")
 
-####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases) 
+####Visualise the variation (can you see how we have reduced variation possibly due to length biases and coverage biases)
 
 get_boxplots(meth1,orig)
 plotavg_cv(meth1,orig)
@@ -749,15 +749,15 @@ for i in range(0,len(result_ttest)):
             print result_ttest.keys()[i]
             diff_express_t1[result_ttest.keys()[i]]=result_ttest.values()[i][0] #take the first replicate
             diff_express_t10[result_ttest.keys()[i]]=result_ttest.values()[i][2]#take first replicate
-            
-        
+
+
 t1_diff=np.array(diff_express_t1.values())
 t10_diff=np.array(diff_express_t10.values())
 
 
 
 ######################check plots in current directory   #coexpression through distance based methods
-#cluster the data 
+#cluster the data
 dend_t1=cluster_data(t1_diff,diff_express_t1.keys(),"t1")
 dendt10=cluster_data(t10_diff,diff_express_t10.keys(),"t10")
 
@@ -765,8 +765,8 @@ dendt10=cluster_data(t10_diff,diff_express_t10.keys(),"t10")
 heatmap_cluster(t1_diff,'t1')
 heatmap_cluster(t10_diff,'t10')
 
-    
-    
+
+
 
 
 

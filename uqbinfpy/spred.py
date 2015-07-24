@@ -26,9 +26,9 @@ def _onehotIndex(alpha, sym):
 
 class SeqNN():
     """ A neural net wrapper for multinomial classification of sequence input """
-    
+
     def __init__(self, inp_len, inp_alpha, outp_alpha, nhidden, cascade = 0):
-        """ Construct a neural net with numeric inputs and outputs 
+        """ Construct a neural net with numeric inputs and outputs
             depending on alphabets used for inputs and outputs.
             inp_len: number of symbols to use as input
             inp_alpha: input alphabet
@@ -44,7 +44,7 @@ class SeqNN():
         self.inp_len  = inp_len
         self.inp_alpha  = inp_alpha
         self.outp_alpha = outp_alpha
-    
+
     def _encodeseq(self, seqs, targets = None):
         """ Convert a list of sequences into numeric input suitable as input to NN. """
         try:
@@ -61,7 +61,7 @@ class SeqNN():
         im = numpy.zeros((totlen, self.inp_len * len(alpha)))
         if targets:
             om = numpy.zeros((totlen, len(self.outp_alpha)))
-        row = 0 
+        row = 0
         for i in range(len(seqs)):
             subseqs = slidewin(seqs[i], self.inp_len)
             if targets:
@@ -76,7 +76,7 @@ class SeqNN():
             return im, om
         else:
             return im, None
-    
+
     def observeAll(self, seqs, targets, eta = 0.1, niter = 1):
         """ Train a classifier to map from all possible windows to the target symbols.
             Decompose each sequence to all full-width sub-sequences. Map each sub-sequence
@@ -97,7 +97,7 @@ class SeqNN():
             rmse = self.nn2.train(im, om, eta = eta, niter = 1)
             print i, ":", rmse
         return rmse
-    
+
     def testAll(self, seqs, targets):
         """ Test the neural network on the specified sequences and target sequences.
             Returns a confusion matrix with the predictions. """
@@ -114,7 +114,7 @@ class SeqNN():
             im, om = self._encodeseq(nn1seqs, targets)
             cm = self.nn2.test(im, om)
             return cm
-    
+
     def predict(self, inpseq, useCascade = True):
         """ Classify each symbol in a sequence.
             Return the predictions as a list of symbols. """
@@ -122,7 +122,7 @@ class SeqNN():
         if useCascade and self.cascade:
             nn1seq = self.predict(inpseq, useCascade = False)
             subseqs = slidewin(nn1seq, self.cascade)
-            predsyms = ['C' for _ in range(len(inpseq))] # use coil for positions in flanking regions 
+            predsyms = ['C' for _ in range(len(inpseq))] # use coil for positions in flanking regions
             for i in range(len(subseqs)):    # for each input sub-sequence of the primary NN
                 input = numpy.zeros(self.cascade * len(self.outp_alpha))
                 input[_onehotIndex(self.outp_alpha, subseqs[i])] = 1
@@ -134,7 +134,7 @@ class SeqNN():
             return sequence.Sequence(predsyms, self.outp_alpha)
         else: # only predict using the first NN
             subseqs = slidewin(inpseq, W)
-            predsyms = ['C' for _ in range(len(inpseq))] # use coil for positions in flanking regions 
+            predsyms = ['C' for _ in range(len(inpseq))] # use coil for positions in flanking regions
             for i in range(len(subseqs)):    # for each input sub-sequence of the primary NN
                 input = numpy.zeros(self.inp_len * len(self.inp_alpha))
                 input[_onehotIndex(self.inp_alpha, subseqs[i])] = 1
@@ -161,7 +161,7 @@ if __name__=='__main__': # examples to run unless this module is merely "importe
     sstr_tst = sstr[1::2] # odd-numbered indices
     W = 15
 
-if __name__=='__main__':   # NN (should read "__main__" for it to be executed on "Run")  
+if __name__=='__main__':   # NN (should read "__main__" for it to be executed on "Run")
     nHid = 30
     nn = SeqNN(W, symbol.Protein_Alphabet, symbol.DSSP3_Alphabet, nHid, cascade = W)
     #nn.nn = ml.readNNFile('sstr3.nn')
@@ -195,11 +195,11 @@ if __name__=='__main__REMOVE_ME':    # NB (should read "__main__" for it to be e
         subtarg = sstr_tst[i][W/2:-W/2+1]
         for j in range(len(subseqs)):
             out = nb[subseqs[j]]
-            c_targ = symbol.DSSP3_Alphabet.index(subtarg[j])  
+            c_targ = symbol.DSSP3_Alphabet.index(subtarg[j])
             c_pred = out.prob().index(max(out.prob()))
             cm[c_targ, c_pred] += 1
     print cm
     Qk, Q = ml.Qk(cm, symbol.DSSP3_Alphabet)
     print Q
     print Qk
-        
+

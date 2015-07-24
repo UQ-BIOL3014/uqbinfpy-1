@@ -8,9 +8,9 @@ import gzip
 """ This module is collection of functions for accessing the EBI REST web services,
     including sequence retrieval, searching, gene ontology, BLAST and ClustalW.
     The class EBI takes precautions taken as to not send too many requests when
-    performing BLAST and ClustalW queries. 
-    
-    See 
+    performing BLAST and ClustalW queries.
+
+    See
     http://www.ebi.ac.uk/Tools/webservices/tutorials/01_intro and
     http://www.ebi.ac.uk/Tools/webservices/tutorials/02_rest
     http://www.ebi.ac.uk/Tools/webservices/tutorials/06_programming/python/rest/urllib
@@ -18,7 +18,7 @@ import gzip
 
 __ebiUrl__ =        'http://www.ebi.ac.uk/Tools/'               # Use UQ mirror when available
 __ebiGOUrl__ =      'http://www.ebi.ac.uk/QuickGO/'             # Use UQ mirror when available
-__uniprotUrl__ =    'http://www.uniprot.org/'                   # 
+__uniprotUrl__ =    'http://www.uniprot.org/'                   #
 
 def fetch(entryId, dbName='uniprotkb', format='fasta'):
     """
@@ -93,14 +93,14 @@ authorised_database_tag = {9606:  ['Homo sapiens', 'ACC', 'ID'],
                            3702:  ['Arabidopsis thaliana', 'TAIR_ID'],
                            4932:  ['Saccharomyces cerevisiae', 'SGD_ID', 'CYGD_ID'],
                            10090: ['Mus musculus', 'MGI_ID']}
-      
+
 def idmap(identifiers, frm='ACC', to='P_REFSEQ_AC', format='tab', reverse=False):
     """
     Map identifiers between databases (based on UniProtKB; see http://www.uniprot.org/faq/28)
     identifiers: a list of identifiers (list of strings)
     frm: the tag/abbreviation for the identifier FROM which to idmap
     to: the tag/abbreviation for the identifier TO which to idmap
-    format: the results format to use 
+    format: the results format to use
     reverse: reverse the returned mapping key (to) -> value (from)
     Returns a dictionary with key (from) -> value (to)
     Set reverse to True if dictionary should contain the reverse mapping, useful if the mapping is non-unique
@@ -133,7 +133,7 @@ def idmap(identifiers, frm='ACC', to='P_REFSEQ_AC', format='tab', reverse=False)
         return d
     else:
         return dict()
-    
+
 """
 Gene Ontology service (QuickGO)
 http://www.ebi.ac.uk/QuickGO/WebServices.html
@@ -144,7 +144,7 @@ def getGOReport(positives, background = None, database = 'UniProtKB'):
     """ Generate a complete GO term report for a set of genes (positives).
         Each GO term is also assigned an enrichment p-value (on basis of background, if provided).
         Returns a list of tuples (GO_Term_ID[str], Foreground_no[int], Term_description[str]) with no background, OR
-        (GO_Term_ID[str], E-value[float], Foreground_no[int], Background_no[int], Term_description[str]). 
+        (GO_Term_ID[str], E-value[float], Foreground_no[int], Background_no[int], Term_description[str]).
         E-value is a Bonferroni-corrected p-value.
         """
     pos = set(positives)
@@ -188,7 +188,7 @@ def getGOReport(positives, background = None, database = 'UniProtKB'):
         else:
             ret.append((t[0], t[1], defin['name']))
     return ret
-    
+
 def getGODef(goterm):
     """
     Retrieve information about a GO term
@@ -218,7 +218,7 @@ def getGOTerms(genes, database='UniProtKB', completeAnnot = False):
     database: use specified database, e.g. 'UniProtKB', 'UniGene', or 'Ensembl'
     The result is given as a map (key=gene name, value=list of unique terms) OR
     in the case of a single gene as a list of unique terms.
-    If completeAnnot is True (default is False) then the above "terms" is the first element 
+    If completeAnnot is True (default is False) then the above "terms" is the first element
     in a tuple with (gene-terms-map, gene-taxon-id).
     """
     if type(genes) != list and type(genes) != set and type(genes) != tuple:
@@ -268,15 +268,15 @@ def getGOTerms(genes, database='UniProtKB', completeAnnot = False):
             raise RuntimeError(ex.read())
     if completeAnnot:
         if len(genes) == 1:
-            if len(termsmap) == 1: 
+            if len(termsmap) == 1:
                 return (termsmap[genes[0]], taxonmap[genes[0]])
             else:
-                return (set(), None) 
+                return (set(), None)
         else:
             return (termsmap, taxonmap)
     else:
         if len(genes) == 1:
-            if len(termsmap) == 1: 
+            if len(termsmap) == 1:
                 return termsmap[genes[0]]
             else:
                 return set()
@@ -319,29 +319,29 @@ def getGenes(goterms, database='UniProtKB', taxo=None):
 
 
 class EBI(object):
-    
+
     __email__ =         'anon@uq.edu.au'                            # to whom emails about jobs should go
     __ebiServiceUrl__ = 'http://www.ebi.ac.uk/Tools/services/rest/' # Use UQ mirror when available
     __checkInterval__ = 2                                           # how long to wait between checking job status
 
     def __init__(self, service=None):
-        """ Initialise service session. 
+        """ Initialise service session.
         service: presently, ncbiblast and clustalw2 are supported. Use None (default) for fetch/idmap jobs.
         """
         self.service = service
         self.lockFile = '%s.lock' % service
-    
+
     def createLock(self):
         """ Create a lock file to prevent submission of more than 1 job
         at a time by a single user. """
         fh = open(self.lockFile, 'w')
         fh.write(self.jobId)
         fh.close()
-    
+
     def removeLock(self):
         """ Remove the lock file. """
         os.remove(self.lockFile)
-    
+
     def isLocked(self):
         """ Check if there is a lock on this service. If there is, check if
         the job is complete, and if so remove the lock. Return True if still
@@ -359,11 +359,11 @@ class EBI(object):
                 return False
         else:
             return False
-    
+
     """
     BLAST and CLUSTALW services
     """
-    
+
     def run(self, params):
         """ Submit a job to the given service with the given parameters, given
         as a dictionary. Return the jobId. """
@@ -371,7 +371,7 @@ class EBI(object):
             raise RuntimeError('No service specified')
         if self.isLocked():
             raise RuntimeError("""You currently have a %s job running. You must
-                                  wait until it is complete before submitting another job. Go to 
+                                  wait until it is complete before submitting another job. Go to
                                   %sstatus/%s to check the status of the job.""" % (self.service, self.__ebiServiceUrl__, self.jobId))
         url = self.__ebiServiceUrl__ + self.service + '/run/'
         # ncbiblast database parameter needs special handling
@@ -389,7 +389,7 @@ class EBI(object):
         self.jobId = urllib2.urlopen(url, encodedParams).read()
         self.createLock()
         return self.jobId
-    
+
     def status(self, jobId=None):
         """ Check the status of the given job (or the current job if none is
         specified), and return the result. """
@@ -398,13 +398,13 @@ class EBI(object):
         url = self.__ebiServiceUrl__ + self.service + '/status/%s' % jobId
         status = urllib2.urlopen(url).read()
         return status
-    
+
     def resultTypes(self):
         """ Get the available result types. Will only work on a finished job. """
         url = self.__ebiServiceUrl__ + self.service + '/resulttypes/%s' % self.jobId
         resultTypes = urllib2.urlopen(url).read()
         return resultTypes
-    
+
     def result(self, resultType):
         """ Get the result of the given job of the specified type. """
         url = self.__ebiServiceUrl__ + self.service + '/result/%s/%s' % (self.jobId, resultType)
@@ -418,9 +418,9 @@ class EBI(object):
             else:
                 self.result('error')
         return result
-    
+
     def submit(self, params, resultTypes):
-        """ Submit a new job to the service with the given parameters. 
+        """ Submit a new job to the service with the given parameters.
         Return the output in the specified format. """
         params['email'] = self.__email__
         self.run(params)

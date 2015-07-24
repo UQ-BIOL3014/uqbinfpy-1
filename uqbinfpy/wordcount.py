@@ -22,7 +22,7 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
         WordWidth: length of sought words
         PeakWidth: width of window around centre of sequence
         PeakMargin: the width of the margin on each side of the centre window
-        (which delineates the positives around peak from negatives away from peak). """ 
+        (which delineates the positives around peak from negatives away from peak). """
     pos = RCDict() # reverse complement-aware dictionary for DNA
     neg = RCDict() # reverse complement-aware dictionary for DNA
     for seq in seqs:
@@ -42,7 +42,7 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
                 neg[word] += 1
             except KeyError:
                 neg[word] = 1
-    
+
     logratio = RCDict() # DNA dictionary for storing the log-ration between pos and neg
     for (word, cnt_pos) in pos.items():
         cnt_neg = 0.0001
@@ -51,7 +51,7 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
         except KeyError:
             pass
         logratio[word] = math.log(float(cnt_pos) / float(cnt_neg))
-    
+
     allpos = logratio.items() # extract all pairs of words:log-ratio
     sortpos = sorted(allpos, key=lambda v: v[1], reverse=True) # sort them
     print "Enriched words (sorted by ln pos/neg)"
@@ -59,7 +59,7 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
     for (word, lgr) in sortpos[0:100]: # Look at the top-entries according to log-ratio, compute e-values
         cnt_pos = int(pos[word])
         try: cnt_neg = int(neg[word])
-        except KeyError: cnt_neg = 0 
+        except KeyError: cnt_neg = 0
         # Compute p-value using Fisher's Exact test
         pval = stats.getFETpval(cnt_pos, cnt_neg, len(seqs) * (PeakWidth - WordWidth + 1) - cnt_pos, len(seqs) * (len(seq) - (PeakMargin * 2 + PeakWidth) - (WordWidth - 1) * 2) - cnt_neg, False)
         # Correct for multiple testing (very conservatively)
@@ -67,15 +67,15 @@ def countWordsReport(seqs, WordWidth = 8, PeakWidth = 100, PeakMargin = 100):
         print "%s\t%6.3f  \t%e" % (word, lgr, eval)
 
 def getReverse(distribs):
-    """ Construct a new list of probability distributions of DNA, by 
+    """ Construct a new list of probability distributions of DNA, by
         1. swapping their order, and
         2. swapping A's and T's, and C's and G's """
     return [d.swapxcopy('A','T').swapxcopy('C','G') for d in distribs[::-1]] # backwards
 
 
 def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
-    """ Produce a plot for a scan of the specified motif. 
-        The plot has as its x-axis position of sequence, and 
+    """ Produce a plot for a scan of the specified motif.
+        The plot has as its x-axis position of sequence, and
         the y-axis the cumulative, non-negative PWM score over all sequences. """
     # check that all sequences are the same length and set sequence length
     seq_len = len(seqs[0])
@@ -88,7 +88,7 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
     bg = prb.Distrib(sym.DNA_Alphabet, sequence.getCount(seqs))
     d = prb.readMultiCounts(jaspar)
     try:
-        fg1 = d[motif] 
+        fg1 = d[motif]
         fg2 = getReverse(d[motif])
     except KeyError:
         usage(sys.argv[0], "Unknown motif %s" % motif)
@@ -153,9 +153,9 @@ def scanMotifReport(seqs, motif, threshold=0, jaspar = 'JASPAR_matrices.txt'):
 
 
 def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices.txt', seed=0):
-    """ Produce a plot for a scan of the specified motif. 
-        The plot has as its x-axis position of sequence, and 
-        the y-axis the number of sequences with a best hit at position x. 
+    """ Produce a plot for a scan of the specified motif.
+        The plot has as its x-axis position of sequence, and
+        the y-axis the number of sequences with a best hit at position x.
         Sequences with no hit above 'threshold' are ignored.
         Ties for best hit are broken randomly.
         The p-value of the central region that is most "centrally enriched"
@@ -259,7 +259,7 @@ def scanMotifReport_new(seqs, motif, threshold=3.4567, jaspar = 'JASPAR_matrices
     plt.ylabel('Smoothed probability')
     plt.title(motif)
     plt.show()
-                
+
 def usage(name, errmsg = None):
     if errmsg != None:
         print "Error: %s" % errmsg
@@ -305,5 +305,5 @@ if __name__ == '__main__':
     elif SCAN_MODE:
         scanMotifReport(seqs, MOTIF_ID)
     else:
-        usage(sys.argv[0], "No run mode selected")    
+        usage(sys.argv[0], "No run mode selected")
 

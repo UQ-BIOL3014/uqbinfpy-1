@@ -2,30 +2,30 @@
 # This module is a supplement to the Python guide #
 # Version 1.2014.1 (21/7/2014)                    #
 ###################################################
-''' 
+'''
 This module contains code for that can help solving bioinformatics problems.
-See the accompanying Python guide for more explanations and examples. 
+See the accompanying Python guide for more explanations and examples.
 
-Alphabet is a class that defines valid symbols that we then use to make up valid 
-biological sequences. Note that we also define variables corresponding to 
+Alphabet is a class that defines valid symbols that we then use to make up valid
+biological sequences. Note that we also define variables corresponding to
 DNA, RNA and Protein sequences that can be used directly.
 
-Sequence defines basic parts and operations on biological sequences. 
+Sequence defines basic parts and operations on biological sequences.
 
-Alignment defines an alignment of sequences (how symbols in different sequences line 
+Alignment defines an alignment of sequences (how symbols in different sequences line
 up when placed on-top). Alignment methods should generate instances of this class.
 
-SubstMatrix defines a substitution matrix, i.e. a scoring system for performing 
+SubstMatrix defines a substitution matrix, i.e. a scoring system for performing
 alignments. You can read these from files or construct them manually.
 
-GeneProfile defines parts and operations for gene expression profiles. Essentially, 
+GeneProfile defines parts and operations for gene expression profiles. Essentially,
 the class will help to index expression data by gene name (rows) and by sample name (columns).
 
-There are several methods not tied to a particular class because they construct new instances, 
+There are several methods not tied to a particular class because they construct new instances,
 e.g. reading from file, retrieving from the internet, creating an alignment from sequences etc.
 
-You need to have numpy installed (see http://www.numpy.org/). 
-Should work with Python v2.6-2.7 (see http://www.python.org/). 
+You need to have numpy installed (see http://www.numpy.org/).
+Should work with Python v2.6-2.7 (see http://www.python.org/).
 Has not been written to work with Python v3 and later--but this should be easy to do.
 The code may contain bugs--please report to m.boden@uq.edu.au
 '''
@@ -38,21 +38,21 @@ class Alphabet():
         self.symbols = symbolString
     def __len__(self):              # implements the "len" operator, e.g. "len(Alphabet('XYZ')" results in 3
         return len(self.symbols)
-    def __contains__(self, sym):    # implements the "in" operator, e.g. "'A' in Alphabet('ACGT')" results in True 
+    def __contains__(self, sym):    # implements the "in" operator, e.g. "'A' in Alphabet('ACGT')" results in True
         return sym in self.symbols
     def __iter__(self):             # method that allows us to iterate over all symbols, e.g. "for sym in Alphabet('ACGT'): print sym" prints A, C, G and T on separate lines
         tsyms = tuple(self.symbols)
         return tsyms.__iter__()
-""" Below we declare alphabet variables that are going to be available when 
-this module is imported """ 
+""" Below we declare alphabet variables that are going to be available when
+this module is imported """
 DNA_Alphabet = Alphabet('ACGT')
 RNA_Alphabet = Alphabet('ACGU')
 Protein_Alphabet = Alphabet('ACDEFGHIKLMNPQRSTVWY')
 Protein_wX = Alphabet('ACDEFGHIKLMNPQRSTVWYX')
 
 class Sequence():
-    """ A biological sequence class. Stores the sequence itself, 
-        the alphabet and a name. 
+    """ A biological sequence class. Stores the sequence itself,
+        the alphabet and a name.
         Usage:
         >>> seq1 = Sequence('ACGGGAGAGG', DNA_Alphabet, 'ABC')
         >>> print seq1
@@ -111,7 +111,7 @@ class Sequence():
 
 class Alignment():
     """ A sequence alignment class. Stores two or more sequences of equal length where
-    one symbol is gap '-'. The number of columns in the alignment is given by alignlen. 
+    one symbol is gap '-'. The number of columns in the alignment is given by alignlen.
     Example usage:
     >>> seqs = [Sequence('THIS-LI-NE', Protein_Alphabet, gappy = True), Sequence('--ISALIGNED', Protein_Alphabet, gappy = True)]
     >>> print Alignment(seqs)
@@ -125,7 +125,7 @@ class Alignment():
                 self.alignlen = len(s)
             elif self.alignlen != len(s):
                 raise RuntimeError("Alignment invalid")
-    def __str__(self):    
+    def __str__(self):
         string = ''
         namelen = 0
         for seq in self.seqs:
@@ -165,12 +165,12 @@ def align(seqA, seqB, substMatrix, gap = -1):
     j = lenB
     # Stop when we hit the end of a sequence
     while i > 0 and j > 0:
-        if S[i, j] == S[i-1, j] + gap: 
+        if S[i, j] == S[i-1, j] + gap:
             # Got here by a gap in sequence B (go up)
             alignA = stringA[i-1] + alignA
             alignB = '-' + alignB
             i -= 1
-        elif S[i, j] == S[i, j-1] + gap: 
+        elif S[i, j] == S[i, j-1] + gap:
             # Got here by a gap in sequence A (go left)
             alignA = "-" + alignA
             alignB = stringB[j-1] + alignB
@@ -212,7 +212,7 @@ def scoreAlignment(aln, substmat = None, gap = -1):
                 if substmat == None:
                     if aln.seqs[i][pos] == aln.seqs[j][pos]:
                         score = 1
-                else: # we have a substitution matrix 
+                else: # we have a substitution matrix
                     if gap_here:
                         score = gap
                     else:
@@ -236,10 +236,10 @@ class SubstMatrix():
     ...             sm.set(a, b, +1)
     ...
     >>> print sm
-    A   1 
-    C  -1   1 
-    G  -1  -1   1 
-    T  -1  -1  -1   1 
+    A   1
+    C  -1   1
+    G  -1  -1   1
+    T  -1  -1  -1   1
         A   C   G   T
     >>> sm.get('C', 'T')
     -1
@@ -300,18 +300,18 @@ def readSubstMatrix(filename, alphabet):
 
 """
 Below are some useful methods for loading data from strings and files.
-Recognize the FASTA and Clustal formats (nothing fancy). 
+Recognize the FASTA and Clustal formats (nothing fancy).
 """
 def readFastaString(string, alphabet):
     """ Read the given string as FASTA formatted data and return the list of
     sequences contained within it. """
-    seqlist = []    # list of sequences contained in the string 
-    seqname = None  # name of *current* sequence 
+    seqlist = []    # list of sequences contained in the string
+    seqname = None  # name of *current* sequence
     seqdata = []    # sequence data for *current* sequence
     for line in string.splitlines():    # read every line
         if len(line) == 0:              # ignore empty lines
             continue
-        if line[0] == '>':  # start of new sequence            
+        if line[0] == '>':  # start of new sequence
             if seqname:     # check if we've got one current
                 current = Sequence(''.join(seqdata), alphabet, seqname)
                 seqlist.append(current)
@@ -329,7 +329,7 @@ def readFastaString(string, alphabet):
     return seqlist
 
 def readFastaFile(filename, alphabet):
-    """ Read the given FASTA formatted file and return the list of sequences 
+    """ Read the given FASTA formatted file and return the list of sequences
     contained within it. """
     fh = open(filename)
     data = fh.read()
@@ -343,7 +343,7 @@ def writeFastaFile(filename, seqs):
     for seq in seqs:
         fh.write(str(seq))
     fh.close()
-    
+
 def readClustalString(string, alphabet):
     """ Read a ClustalW2 alignment in the given string and return as an
     Alignment object. """
@@ -422,7 +422,7 @@ class GeneProfile():
         if isinstance(sample_name, str):    # a single sample-name
             mysamples = [sample_name]
         else:                               # a list of sample-names
-            mysamples = sample_name         
+            mysamples = sample_name
         for gene in self.genes:
             mygenes[gene] = []
             for name in mysamples:
@@ -509,7 +509,7 @@ def readGeoFile(filename, id_column = 0):
     return dataset
 
 """
-Web service methods that find data in online databases. 
+Web service methods that find data in online databases.
 Our implementations are mainly serviced by EBI.
 """
 def getSequence(entryId, dbName, alphabet):
@@ -560,7 +560,7 @@ def searchSequences(query, dbName):
 
 def idmap(identifiers, frm='ACC', to='P_REFSEQ_AC'):
     """
-    Map identifiers between databases (based on UniProtKB; 
+    Map identifiers between databases (based on UniProtKB;
     see http://www.uniprot.org/faq/28)
     identifiers: a list of identifiers (list of strings)
     frm: the abbreviation for the identifier FROM which to idmap
@@ -622,12 +622,12 @@ def getGODef(goterm):
 def getGOTerms(genes, db='UniProtKB'):
     """
     Retrieve all GO terms for a given set of genes (or single gene).
-    db: use specified database, e.g. 'UniProtKB', 'UniGene', 
+    db: use specified database, e.g. 'UniProtKB', 'UniGene',
     or 'Ensembl'.
-    The result is given as a map (key=gene name, value=list of unique 
+    The result is given as a map (key=gene name, value=list of unique
     terms) OR in the case of a single gene as a list of unique terms.
     """
-    if type(genes) != list and type(genes) != set and type(genes) != tuple:   
+    if type(genes) != list and type(genes) != set and type(genes) != tuple:
         genes = [genes]  # if 'genes' is a single gene, we make a single item list
     map = dict()
     uri = 'http://www.ebi.ac.uk/QuickGO/GAnnotation?format=tsv&db='+db+'&protein='
@@ -650,12 +650,12 @@ def getGOTerms(genes, db='UniProtKB'):
 
 def getGenes(goterms, db='UniProtKB', taxo=None):
     """
-    Retrieve all genes/proteins for a given set of GO terms 
+    Retrieve all genes/proteins for a given set of GO terms
     (or single GO term).
-    db: use specified database, e.g. 'UniProtKB', 'UniGene', 
+    db: use specified database, e.g. 'UniProtKB', 'UniGene',
     or 'Ensembl'
     taxo: use specific taxonomic identifier, e.g. 9606 (human)
-    The result is given as a map (key=gene name, value=list of unique 
+    The result is given as a map (key=gene name, value=list of unique
     terms) OR in the case of a single gene as a list of unique terms.
     """
     if type(goterms) != list and type(goterms) != set and type(goterms) != tuple:
@@ -682,17 +682,17 @@ def getGenes(goterms, db='UniProtKB', taxo=None):
         return map[goterms[0]]
     else:
         return map
-    
+
 """ Below is code that will be run if the module is "run",
     and not just "loaded".
 """
 if __name__=='__main__':
     x = Sequence('ACTGA', DNA_Alphabet, 'x')
     print "Sequence", x, "is constructed from the symbols", x.alphabet.symbols
-    print "( There are", x.count('A'), "occurrences of the symbol 'A' in", x.sequence, ")" 
+    print "( There are", x.count('A'), "occurrences of the symbol 'A' in", x.sequence, ")"
     y = Sequence('TACGA', DNA_Alphabet, 'y')
     print "Sequence", y, "is constructed from the symbols", y.alphabet.symbols
-    print 
+    print
     print "( The sub-sequence 'CG' starts at index", y.find('CG'), "of", y.sequence, ")"
     print
     sm = SubstMatrix(DNA_Alphabet)

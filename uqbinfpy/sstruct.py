@@ -1,5 +1,5 @@
 '''
-Module sstruct -- methods for protein secondary structure 
+Module sstruct -- methods for protein secondary structure
 '''
 
 import sequence
@@ -35,7 +35,7 @@ sstr_alpha = symbol.DSSP3_Alphabet
 
 def makesstr(seq, sym = '*', gap = '-'):
     """ Create a string from a list of booleans (seq) that indicate with sym what elements are true.
-        gap is used for elements that are false. 
+        gap is used for elements that are false.
     """
     sstr = ''
     for yes in seq:
@@ -51,38 +51,38 @@ def markCountAbove(scores, width = 6, call_cnt = 4):
         scores: a list of scores (one for each position in sequence)
         width: width of window
         call_cnt: required number of positions with score 100 or more
-        return: list of "calls" (positions in windows with at least call_cnt) 
+        return: list of "calls" (positions in windows with at least call_cnt)
     """
     above = [False for _ in range(len(scores))]
     cnt = 0 # keep track of how many in the current window that are > 100
     for i in range(len(scores)):
         if scores[i] > 100: cnt += 1
-        if i >= width: 
+        if i >= width:
             if scores[i - width] > 100: cnt -= 1
         if cnt >= call_cnt:
             for j in range(max(0, i - width + 1), i + 1):
-                above[j] = True 
+                above[j] = True
     return above
 
 def markAvgAbove(scores, width = 4, call_avg = 100.0):
-    """ Create a list of booleans that mark all positions within a window of specified width 
+    """ Create a list of booleans that mark all positions within a window of specified width
         that have an average score above specified call_avg.
     """
     above = [False for _ in range(len(scores))]
-    sum = 0.0 # 
+    sum = 0.0 #
     for i in range(len(scores)):
         sum += scores[i]
-        if i >= width: # 
+        if i >= width: #
             sum -= scores[i - width]
         if sum >= call_avg * width:
             for j in range(max(0, i - width + 1), i + 1):
-                above[j] = True 
+                above[j] = True
     return above
 
 def extendDownstream(scores, calls, width = 4):
-    """ Create a list of booleans that mark all positions that are contained 
-        in supplied calls list AND extend this list downstream containing a 
-        specified width average of 100. 
+    """ Create a list of booleans that mark all positions that are contained
+        in supplied calls list AND extend this list downstream containing a
+        specified width average of 100.
     """
     sum = 0.0
     order = range(0, len(calls) - 1, +1)  # we are extending calls downstream
@@ -102,7 +102,7 @@ def extendDownstream(scores, calls, width = 4):
 
 def extendUpstream(scores, calls, width = 4):
     """ Create a list of booleans that mark all positions that are contained in supplied calls list
-        AND extend this list upstream containing a specified width average of 100. 
+        AND extend this list upstream containing a specified width average of 100.
     """
     sum = 0.0
     order = range(len(calls) - 1, 0, -1)  # we are extending calls upstream/to-the-left
@@ -121,9 +121,9 @@ def extendUpstream(scores, calls, width = 4):
     return calls
 
 def calcRegionAverage(scores, calls):
-    """ Determine for each position in a calls list the average score over the region 
+    """ Determine for each position in a calls list the average score over the region
         in which it is contained.
-    """ 
+    """
     region_avg = []
     sum = 0.0
     cnt = 0
@@ -134,11 +134,11 @@ def calcRegionAverage(scores, calls):
             cnt += 1              # keep track of the number of positions in the region
         else:                     # we are outside a "called" region
             if cnt > 0:           # if it is the first AFTER a called region
-                region_avg.append(sum/cnt)   # save the average 
+                region_avg.append(sum/cnt)   # save the average
             sum = 0.0             # reset average
             cnt = 0
     if cnt > 0:           # if it is the first AFTER a called region
-        region_avg.append(sum/cnt)   # save the average 
+        region_avg.append(sum/cnt)   # save the average
     # with all averages known, we'll populate the sequence of "averages"
     region = 0
     pos_avg = []
@@ -155,13 +155,13 @@ def calcRegionAverage(scores, calls):
     return pos_avg
 
 def checkSupport(calls, diff):
-    """ Create a list of booleans indicating if each true position is supported 
-        by a positive score """ 
+    """ Create a list of booleans indicating if each true position is supported
+        by a positive score """
     supported = []
     for i in range(len(calls)):   # go through each position
         supported.append(calls[i] and diff[i] > 0)
     return supported
-    
+
 def getScores(seq, index = 0):
     """ Create a score list for a sequence by referencing the Chou-Fasman table.
     """
@@ -200,34 +200,34 @@ for index in range(len(prot)):
     turn  = getScores(myprot, 2)
 
     """
-     2. Scan through the peptide and identify regions where 4 out of 6 contiguous residues have P(a-helix) > 100. 
-        That region is declared an alpha-helix. 
-        Extend the helix in both directions until a set of four contiguous residues that have an average P(a-helix) < 100 is reached. 
-        That is declared the end of the helix. 
-        If the segment defined by this procedure is longer than 5 residues and the average P(a-helix) > P(b-sheet) for that segment, 
+     2. Scan through the peptide and identify regions where 4 out of 6 contiguous residues have P(a-helix) > 100.
+        That region is declared an alpha-helix.
+        Extend the helix in both directions until a set of four contiguous residues that have an average P(a-helix) < 100 is reached.
+        That is declared the end of the helix.
+        If the segment defined by this procedure is longer than 5 residues and the average P(a-helix) > P(b-sheet) for that segment,
         the segment can be assigned as a helix.
-    
+
      3. Repeat this procedure to locate all of the helical regions in the sequence.
     """
     calls_a1 = markCountAbove(alpha, width = 6, call_cnt = 4)
     calls_a2 = extendDownstream(alpha, calls_a1, width = 4)
     calls_a3 = extendUpstream(alpha, calls_a2, width = 4)
-    
-    """ 
-     4. Scan through the peptide and identify a region where 3 out of 5 of the residues have a value of P(b-sheet) > 100. 
-        That region is declared as a beta-sheet. 
-        Extend the sheet in both directions until a set of four contiguous residues that have an average P(b-sheet) < 100 is reached. 
-        That is declared the end of the beta-sheet. 
-        Any segment of the region located by this procedure is assigned as a beta-sheet 
+
+    """
+     4. Scan through the peptide and identify a region where 3 out of 5 of the residues have a value of P(b-sheet) > 100.
+        That region is declared as a beta-sheet.
+        Extend the sheet in both directions until a set of four contiguous residues that have an average P(b-sheet) < 100 is reached.
+        That is declared the end of the beta-sheet.
+        Any segment of the region located by this procedure is assigned as a beta-sheet
         if the average P(b-sheet) > 105 and the average P(b-sheet) > P(a-helix) for that region.
     """
     calls_b1 = markCountAbove(beta, width = 5, call_cnt = 3)
     calls_b2 = extendDownstream(beta, calls_b1, width = 4)
     calls_b3 = extendUpstream(beta, calls_b2, width = 4)
-    
+
     """
-     5. Any region containing overlapping alpha-helical and beta-sheet assignments are taken to be helical 
-        if the average P(a-helix) > P(b-sheet) for that region. 
+     5. Any region containing overlapping alpha-helical and beta-sheet assignments are taken to be helical
+        if the average P(a-helix) > P(b-sheet) for that region.
         It is a beta sheet if the average P(b-sheet) > P(a-helix) for that region.
     """
     avg_a = calcRegionAverage(alpha, calls_a3)
@@ -236,7 +236,7 @@ for index in range(len(prot)):
     diff_b = [avg_b[i] - avg_a[i] for i in range(len(avg_a))]
     calls_a4 = checkSupport(calls_a3, diff_a)
     calls_b4 = checkSupport(calls_b3, diff_b)
-        
+
     i = 0
     for call in myalpha:
         if call:
