@@ -4,7 +4,7 @@ Motif discovery using Gibb's sampling
 '''
 import math
 import random
-import symbol
+import seqsymbol
 import prob
 import sequence
 

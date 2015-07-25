@@ -5,7 +5,7 @@ A neural net wrapper class is provided.
 A couple of example applications are found at the end of this module.
 '''
 import numpy
-import symbol
+import seqsymbol
 import prob
 import sequence
 import ml

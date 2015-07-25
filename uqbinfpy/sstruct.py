@@ -3,7 +3,7 @@ Module sstruct -- methods for protein secondary structure
 '''
 
 import sequence
-import symbol
+import seqsymbol
 
 cf_dict = {  # Chou-Fasman table
 #     P(a), P(b), P(t),    f(i), f(i+1), f(i+2), f(i+3)

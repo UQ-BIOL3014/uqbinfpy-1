@@ -1,4 +1,4 @@
-import symbol as sym
+import seqsymbol as sym
 
 class RCDict(dict):
     """ Class that extends a standard dictionary to accept only fixed-length DNA symbol strings as keys.
