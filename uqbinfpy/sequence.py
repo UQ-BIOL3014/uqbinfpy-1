@@ -1234,6 +1234,3 @@ def runBLAST(sequence, program='blastp', database='uniprotkb', exp='1e-1'):
             ids.append(id.split(':')[1])
     return ids
 
-if __name__ == '__main__':
-    aln = readClustalFile('/Users/mikael/simhome/ASR/dp16_example.aln', Protein_Alphabet)
-    aln.displayConsensus(theta1 = 0.1, theta2 = 0.01)
